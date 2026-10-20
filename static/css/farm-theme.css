@@ -1,0 +1,966 @@
+/* Agricarbook - Farm Booking System Theme (Palette: #FAD1D9 & #868F5A) */
+@import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Kanit:wght@400;500;600;700&display=swap');
+
+:root {
+    /* Primary Requested Theme Colors */
+    --farm-rose: #FAD1D9;
+    --farm-olive: #868F5A;
+    
+    /* Earthy Olive Green Shades (#868F5A) */
+    --farm-olive-header: #868F5A;
+    --farm-olive-border: #727b49;
+    --farm-olive-border-soft: #c8d0a8;
+    --farm-olive-hover: #757d4b;
+    --farm-olive-active: #5f653a;
+    --farm-olive-deep: #2c3315;
+    --farm-olive-dark: #3b431e;
+    --farm-olive-tint: #f3f6ea;
+    --farm-btn-olive: #868F5A;
+    --farm-btn-olive-hover: #757d4b;
+    --farm-btn-olive-active: #5f653a;
+
+    /* Soft Blossom Rose Shades (#FAD1D9) */
+    --farm-rose-header: #FAD1D9;
+    --farm-rose-border: #e8b6bf;
+    --farm-rose-border-soft: #f4cdd4;
+    --farm-rose-hover: #f3c1ca;
+    --farm-rose-active: #ebb0ba;
+    --farm-rose-deep: #2c3315;
+    --farm-rose-tint: #fdf5f6;
+
+    /* Backgrounds & Inputs */
+    --farm-bg-body: #faf8f8;
+    --farm-input-bg: #ffffff;
+    --farm-input-border: #c8d0a8;
+    --farm-input-text: #1f2937;
+    --farm-input-placeholder: #7c888d;
+    --farm-table-zebra-olive: #f3f6ea;
+    --farm-table-zebra-rose: #fdf5f6;
+
+    --farm-card-radius: 16px;
+    --farm-input-radius: 10px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--farm-bg-body);
+    /* Clean vertical striped pattern: alternating pastel #FAD1D9 and #868F5A */
+    background-image: repeating-linear-gradient(90deg, #fdedf0 0px, #fdedf0 44px, #f1f4e7 44px, #f1f4e7 88px);
+    background-position: top left;
+    background-repeat: repeat;
+    background-attachment: scroll;
+    color: #2b3034;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* --- Top Header / Banner (#FAD1D9) --- */
+.farm-top-banner {
+    background-color: var(--farm-rose);
+    border-bottom: 2px solid var(--farm-rose-border);
+    box-shadow: 0 4px 15px rgba(134, 143, 90, 0.12);
+    position: relative;
+    z-index: 100;
+}
+
+.farm-banner-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 74px;
+    gap: 16px;
+}
+
+/* Left Brand Lockup (Circular Logo) */
+.farm-banner-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.farm-banner-brand:hover {
+    transform: scale(1.02);
+}
+
+.farm-banner-logo {
+    height: 52px;
+    width: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2.5px solid #ffffff;
+    background-color: #ffffff;
+    box-shadow: 0 3px 8px rgba(134, 143, 90, 0.22);
+    transition: transform 0.2s ease;
+}
+
+.farm-banner-brand:hover .farm-banner-logo {
+    transform: rotate(6deg) scale(1.05);
+}
+
+.farm-brand-titles {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.farm-system-title {
+    margin: 0;
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--farm-olive-deep);
+    letter-spacing: 0.5px;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.farm-system-subtitle {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #4b5329;
+    opacity: 0.95;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.farm-admin-badge {
+    font-size: 0.8rem;
+    vertical-align: middle;
+    background: var(--farm-olive);
+    color: #ffffff;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-weight: 700;
+    border: 1.5px solid #717a47;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(134, 143, 90, 0.2);
+}
+
+/* Right Navigation Pill Buttons */
+.farm-banner-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.farm-nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+}
+
+.farm-nav-item {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.farm-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--farm-olive-dark);
+    text-decoration: none;
+    padding: 7px 14px;
+    border-radius: 20px;
+    background-color: #ffffff;
+    border: 1.5px solid var(--farm-olive-border-soft);
+    box-shadow: 0 2px 4px rgba(134, 143, 90, 0.1);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.farm-nav-link:hover {
+    color: #ffffff;
+    background-color: var(--farm-olive);
+    border-color: var(--farm-olive-border);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(134, 143, 90, 0.25);
+}
+
+.farm-nav-link.active {
+    background-color: var(--farm-olive-active);
+    color: #ffffff;
+    border-color: var(--farm-olive-active);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.18);
+}
+
+.farm-nav-link-danger {
+    background-color: #e05252;
+    color: #ffffff;
+    border-color: #d44545;
+}
+.farm-nav-link-danger:hover {
+    background-color: #c9302c;
+    color: #ffffff;
+}
+
+/* --- Main Layout Container --- */
+.farm-main-content {
+    flex: 1;
+    position: relative;
+    z-index: 10;
+    padding: 24px 16px 80px 16px;
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* --- Flash Alerts --- */
+.farm-alert {
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.farm-alert-success {
+    background-color: #eaf3d8;
+    color: #2e431b;
+    border-left: 5px solid #6b773c;
+}
+
+.farm-alert-danger {
+    background-color: #ffe3e3;
+    color: #780000;
+    border-left: 5px solid #c1121f;
+}
+
+.farm-alert-warning {
+    background-color: #fefae0;
+    color: #604900;
+    border-left: 5px solid #dda15e;
+}
+
+.farm-alert-info {
+    background-color: #fcecef;
+    color: #6b2633;
+    border-left: 5px solid #d9788a;
+}
+
+/* --- Booking Form Card (#868F5A Header) --- */
+.farm-booking-card {
+    background: #ffffff;
+    border: 2px solid var(--farm-olive-border-soft);
+    border-radius: var(--farm-card-radius);
+    box-shadow: 0 8px 25px rgba(134, 143, 90, 0.1);
+    overflow: hidden;
+    max-width: 600px;
+    margin: 0 auto 32px auto;
+    position: relative;
+}
+
+.farm-card-header {
+    background-color: var(--farm-olive-header);
+    color: #ffffff;
+    padding: 14px 20px;
+    font-weight: 700;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid var(--farm-olive-border);
+}
+
+.farm-card-header h4,
+.farm-card-header .header-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.3px;
+}
+
+.farm-card-body {
+    padding: 24px 24px 28px 24px;
+    background: #ffffff;
+}
+
+/* Form Controls */
+.farm-form-group {
+    margin-bottom: 16px;
+}
+
+.farm-label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: #1f2937;
+}
+
+.required-asterisk {
+    color: #e03131;
+    font-weight: 700;
+    margin-left: 3px;
+    font-size: 1.1rem;
+    line-height: 1;
+    vertical-align: middle;
+    transition: opacity 0.2s ease, display 0.2s ease;
+}
+
+.farm-datetime-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 576px) {
+    .farm-datetime-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.farm-input {
+    width: 100%;
+    min-height: 44px;
+    background-color: var(--farm-input-bg);
+    border: 1.5px solid var(--farm-input-border);
+    border-radius: var(--farm-input-radius);
+    padding: 10px 16px;
+    font-size: 0.96rem;
+    font-family: inherit;
+    color: var(--farm-input-text);
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+input[type="date"].farm-input,
+input[type="time"].farm-input {
+    min-height: 44px;
+    cursor: pointer;
+}
+
+.farm-input:focus {
+    border-color: var(--farm-olive);
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(134, 143, 90, 0.25);
+}
+
+.farm-input::placeholder {
+    color: var(--farm-input-placeholder);
+    opacity: 0.9;
+}
+
+/* Row of 3 inputs for Date, Start Time, End Time */
+.farm-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+/* Custom Select Dropdown */
+.farm-select {
+    width: 100%;
+    min-height: 44px;
+    background-color: #ffffff;
+    border: 1.5px solid var(--farm-olive-border-soft);
+    border-radius: var(--farm-input-radius);
+    padding: 10px 40px 10px 16px;
+    font-size: 0.96rem;
+    font-family: inherit;
+    color: #2b3034;
+    font-weight: 500;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23868F5A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.farm-select:focus {
+    border-color: var(--farm-olive);
+    box-shadow: 0 0 0 3px rgba(134, 143, 90, 0.25);
+}
+
+/* Submit Button in Olive (#868F5A) */
+.farm-btn-submit {
+    width: 100%;
+    min-height: 46px;
+    background-color: var(--farm-btn-olive);
+    border: 2px solid var(--farm-olive-border);
+    border-radius: var(--farm-input-radius);
+    padding: 10px 20px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-family: inherit;
+    color: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(134, 143, 90, 0.35);
+    transition: all 0.2s ease;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.farm-btn-submit:hover {
+    background-color: var(--farm-btn-olive-hover);
+    border-color: #646b3e;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(134, 143, 90, 0.45);
+}
+
+.farm-btn-submit:active {
+    background-color: var(--farm-btn-olive-active);
+    transform: translateY(1px);
+}
+
+/* --- Busy Table Card (#FAD1D9 Soft Rose Header) --- */
+.farm-table-card-yellow {
+    background: #ffffff;
+    border: 2px solid var(--farm-rose-border);
+    border-radius: var(--farm-card-radius);
+    box-shadow: 0 8px 24px rgba(134, 143, 90, 0.1);
+    overflow: hidden;
+    margin-bottom: 28px;
+}
+
+.farm-card-header-clipboard {
+    background-color: var(--farm-rose-header);
+    color: var(--farm-olive-deep);
+    padding: 14px 20px;
+    font-weight: 700;
+    font-size: 1.15rem;
+    border-bottom: 2px solid var(--farm-rose-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Zebra Striped Table */
+.farm-zebra-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.farm-zebra-table thead th {
+    background-color: #ffffff;
+    color: var(--farm-olive-deep);
+    font-weight: 700;
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--farm-rose-border);
+    text-align: center;
+}
+
+.farm-zebra-table tbody tr:nth-child(odd) {
+    background-color: var(--farm-table-zebra-rose);
+}
+
+.farm-zebra-table tbody tr:nth-child(even) {
+    background-color: var(--farm-table-zebra-olive);
+}
+
+.farm-zebra-table td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    text-align: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* --- Schedule View Card (#FAD1D9 Header) --- */
+.farm-schedule-card {
+    background: #ffffff;
+    border: 2px solid var(--farm-rose-border);
+    border-radius: var(--farm-card-radius);
+    box-shadow: 0 8px 24px rgba(134, 143, 90, 0.1);
+    overflow: hidden;
+    margin-bottom: 28px;
+}
+
+.farm-schedule-header {
+    background-color: var(--farm-rose-header);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--farm-rose-border);
+}
+
+.farm-schedule-header-icon {
+    height: 52px;
+    width: auto;
+    object-fit: contain;
+}
+
+.farm-schedule-title {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--farm-olive-deep);
+    text-align: center;
+}
+
+.farm-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    border: 1.5px solid var(--farm-olive-border-soft);
+}
+
+.farm-schedule-table th {
+    background-color: var(--farm-olive-header);
+    color: #ffffff;
+    font-weight: 700;
+    padding: 12px 16px;
+    border: 1px solid var(--farm-olive-border);
+    text-align: center;
+}
+
+.farm-schedule-table td {
+    padding: 12px 18px;
+    border: 1px solid #e3e8cf;
+    vertical-align: middle;
+    background-color: #ffffff;
+}
+
+/* --- Admin Approval Section --- */
+.farm-pending-card {
+    background: #ffffff;
+    border: 2px solid var(--farm-olive-border-soft);
+    border-radius: var(--farm-card-radius);
+    box-shadow: 0 8px 24px rgba(134, 143, 90, 0.1);
+    overflow: hidden;
+    margin-bottom: 28px;
+}
+
+.farm-pending-card-header {
+    background-color: var(--farm-olive-header);
+    color: #ffffff;
+    padding: 14px 20px;
+    font-weight: 700;
+    font-size: 1.15rem;
+    border-bottom: 2px solid var(--farm-olive-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.admin-approval-card {
+    background: #ffffff;
+    border: 1.5px solid var(--farm-rose-border);
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(134, 143, 90, 0.08);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.admin-approval-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(134, 143, 90, 0.15);
+    border-color: #d697a2;
+}
+
+.admin-card-head {
+    background: var(--farm-rose-header);
+    padding: 12px 16px;
+    border-bottom: 1.5px solid var(--farm-rose-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.admin-code-badge {
+    background-color: var(--farm-olive);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--farm-olive-border);
+}
+
+.admin-vehicle-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--farm-olive-deep);
+    margin: 0;
+}
+
+.admin-card-body {
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* 2-Column Info Grid for Core Details */
+.admin-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.admin-info-tile {
+    background-color: var(--farm-table-zebra-olive);
+    border: 1px solid #dde3c8;
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-info-label {
+    font-size: 0.78rem;
+    color: #576033;
+    font-weight: 600;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.admin-info-val {
+    font-size: 0.95rem;
+    color: #1f2937;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+/* Detail Rows for Location and Purpose */
+.admin-detail-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.admin-detail-row {
+    background-color: #ffffff;
+    border: 1px solid #f1f4e6;
+    border-left: 3.5px solid var(--farm-olive);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.92rem;
+}
+
+.admin-detail-label {
+    color: #4b5563;
+    font-weight: 600;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.admin-detail-val {
+    color: #111827;
+    font-weight: 600;
+}
+
+/* Note Callout Box */
+.admin-note-box {
+    background-color: #fdf3f5;
+    border: 1px solid #f6cad2;
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.86rem;
+    color: #6e1c27;
+}
+
+.admin-note-box strong {
+    color: #520f18;
+}
+
+/* Card Actions */
+.admin-card-actions {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px dashed var(--farm-rose-border);
+    display: flex;
+    gap: 10px;
+}
+
+.admin-card-actions .farm-btn {
+    padding: 9px 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 5px 16px;
+    border-radius: 20px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.status-badge-อนุมัติ {
+    background-color: #2e8b57;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(46, 139, 87, 0.3);
+}
+
+.status-badge-รออนุมัติ {
+    background-color: var(--farm-rose-header);
+    color: var(--farm-olive-deep);
+    border: 1.5px solid var(--farm-rose-border);
+    box-shadow: 0 1px 3px rgba(232, 182, 191, 0.4);
+}
+
+.status-badge-ไม่อนุมัติ {
+    background-color: #e05252;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(224, 82, 82, 0.3);
+}
+
+/* Secondary Button Styles */
+.farm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.farm-btn-teal {
+    background-color: var(--farm-btn-olive);
+    color: #ffffff;
+    border: 1.5px solid var(--farm-olive-border);
+    font-weight: 700;
+}
+.farm-btn-teal:hover {
+    background-color: var(--farm-btn-olive-hover);
+    color: #ffffff;
+}
+
+.farm-btn-success {
+    background-color: #2e8b57;
+    color: #ffffff;
+}
+.farm-btn-success:hover {
+    background-color: #257046;
+    color: #ffffff;
+}
+
+.farm-btn-danger {
+    background-color: #e05252;
+    color: #ffffff;
+}
+.farm-btn-danger:hover {
+    background-color: #c93d3d;
+    color: #ffffff;
+}
+
+/* Footer Accent */
+.farm-footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.88rem;
+    color: #4a5568;
+    position: relative;
+    z-index: 10;
+}
+
+/* Table Wrapper */
+.farm-table-wrapper {
+    overflow-x: auto;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .farm-banner-container {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+        padding: 14px;
+    }
+
+    .farm-banner-brand {
+        flex-direction: column;
+        gap: 6px;
+        text-align: center;
+    }
+
+    .farm-brand-titles {
+        flex-direction: column;
+        gap: 2px;
+        align-items: center;
+    }
+
+    .farm-nav-list {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .farm-schedule-header {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .farm-booking-card {
+        margin: 0 4px 24px 4px;
+    }
+}
+
+/* --- Creators Card Styling --- */
+.farm-creators-card {
+    background: #ffffff;
+    border: 2px solid var(--farm-olive-border-soft);
+    border-radius: var(--farm-card-radius);
+    box-shadow: 0 8px 24px rgba(134, 143, 90, 0.1);
+    overflow: hidden;
+    margin-bottom: 28px;
+}
+
+.creator-card {
+    border: 1.5px solid var(--farm-rose-border);
+    border-radius: 14px;
+    background-color: #ffffff;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.creator-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(134, 143, 90, 0.15);
+    border-color: #d697a2;
+}
+
+.creator-card-body {
+    display: flex;
+    align-items: center;
+    padding: 14px 18px;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.creator-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.creator-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--farm-rose), var(--farm-olive));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+}
+
+.creator-number-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    background: var(--farm-olive-deep);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    line-height: 1;
+}
+
+.creator-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.creator-name {
+    margin: 0 0 4px 0;
+    color: var(--farm-olive-deep);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.35;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.creator-id-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--farm-rose);
+    border: 1px solid var(--farm-rose-border);
+    color: var(--farm-olive-deep);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 10px;
+    max-width: 100%;
+    box-sizing: border-box;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.creator-id-label {
+    opacity: 0.85;
+    font-size: 0.78rem;
+}
+
+.creator-id-val {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}

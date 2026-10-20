@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+        <!-- Main Booking Card Matching Farm Theme -->
+        <div class="farm-booking-card">
+            <!-- Header bar -->
+            <div class="farm-card-header">
+                <h4 class="header-title">🌾 แบบฟอร์มขอจองยานพาหนะการเกษตร</h4>
+            </div>
+
+            <!-- Form body -->
+            <div class="farm-card-body">
+                <form action="{{ url_for('user_request') }}" method="POST">
+                    <!-- ชื่อผู้ขอใช้รถ -->
+                    <div class="farm-form-group">
+                        <label class="farm-label">ชื่อ-นามสกุล ผู้ขอใช้รถ <span class="required-asterisk">*</span></label>
+                        <input type="text" class="farm-input" name="user_name" placeholder="เช่น นายสมชาย ใจดี" required>
+                    </div>
+
+                    <!-- วันที่เริ่มต้นใช้งาน และ เวลาเริ่มต้นใช้งาน -->
+                    <div class="farm-form-group">
+                        <div class="farm-datetime-grid">
+                            <div>
+                                <label class="farm-label">วันที่เริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
+                                <input type="date" class="farm-input" name="start_date" required>
+                            </div>
+                            <div>
+                                <label class="farm-label">เวลาเริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
+                                <input type="time" class="farm-input" name="start_time" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- วันที่สิ้นสุดการใช้งาน และ เวลาสิ้นสุดการใช้งาน -->
+                    <div class="farm-form-group">
+                        <div class="farm-datetime-grid">
+                            <div>
+                                <label class="farm-label">วันที่สิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
+                                <input type="date" class="farm-input" name="end_date" required>
+                            </div>
+                            <div>
+                                <label class="farm-label">เวลาสิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
+                                <input type="time" class="farm-input" name="end_time" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ยานพาหนะ / เครื่องจักรกลการเกษตร -->
+                    <div class="farm-form-group">
+                        <label class="farm-label">ยานพาหนะ / เครื่องจักรกลเกษตร <span class="required-asterisk">*</span></label>
+                        <select class="farm-select" name="vehicle" required>
+                            <option value="" disabled selected>-- กรุณาเลือกยานพาหนะที่ต้องการจอง --</option>
+                            {% for v in vehicles %}
+                                <option value="{{ v }}">{{ v }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- สถานที่ปฏิบัติงาน -->
+                    <div class="farm-form-group">
+                        <label class="farm-label">สถานที่ปฏิบัติงาน / แปลงเกษตร <span class="required-asterisk">*</span></label>
+                        <input type="text" class="farm-input" name="location" placeholder="เช่น แปลงนาข้าว ต.บางเลน จ.นครปฐม" required>
+                    </div>
+
+                    <!-- วัตถุประสงค์การใช้งาน -->
+                    <div class="farm-form-group">
+                        <label class="farm-label">วัตถุประสงค์การใช้งาน <span class="required-asterisk">*</span></label>
+                        <input type="text" class="farm-input" name="purpose" placeholder="เช่น เกี่ยวข้าวหอมมะลิ, ไถแปรเตรียมแปลงปลูก" required>
+                    </div>
+
+                    <!-- หมายเหตุเพิ่มเติม -->
+                    <div class="farm-form-group">
+                        <label class="farm-label">หมายเหตุเพิ่มเติม (ถ้ามี)</label>
+                        <input type="text" class="farm-input" name="note" placeholder="ระบุข้อมูลเพิ่มเติม หรือปล่อยว่างหากไม่มี">
+                    </div>
+
+                    <!-- ปุ่มส่งคำขอจอง -->
+                    <button type="submit" class="farm-btn-submit">🌾 ส่งคำขอจองยานพาหนะ</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Real-time Availability Table -->
+        <div class="farm-table-card-yellow">
+            <div class="farm-card-header-clipboard d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span>📋</span>
+                    <span>ตารางรายการจองยานพาหนะ (ช่วงเวลาที่ไม่ว่าง)</span>
+                </div>
+                <span class="badge bg-white text-dark rounded-pill px-3 py-1" style="font-size: 0.82rem; font-weight: 600;">{{ busy_list|length }} รายการ</span>
+            </div>
+            <div class="farm-table-wrapper">
+                <table class="farm-zebra-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">ยานพาหนะการเกษตร</th>
+                            <th style="width: 25%;">วันที่ใช้งาน</th>
+                            <th style="width: 25%;">ช่วงเวลาที่ไม่ว่าง</th>
+                            <th style="width: 20%;">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in busy_list %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ item.vehicle }}</td>
+                            <td>{{ item.date_display }}</td>
+                            <td>{{ item.time_display }}</td>
+                            <td>
+                                <span class="status-badge status-badge-{{ item.status }}">{{ item.status }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-muted py-4">🌾 ยังไม่มีรายการจอง ยานพาหนะทุกคันว่างพร้อมใช้งาน</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript จัดการซ่อนดอกจันสีแดงเมื่อพิมพ์เสร็จ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const requiredElements = document.querySelectorAll('form [required]');
+    
+    requiredElements.forEach(elem => {
+        // ค้นหาดอกจันที่อยู่ภายในฟิลด์เดียวกันหรือ label ที่เกี่ยวข้อง
+        let formGroup = elem.closest('.farm-form-group') || elem.parentElement;
+        // กรณีอยู่ใน farm-datetime-grid ให้ค้นหา label ใน parent ของ input นั้น
+        let label = formGroup.querySelector('label');
+        if (elem.parentElement && elem.parentElement.querySelector('label')) {
+            label = elem.parentElement.querySelector('label');
+        }
+        const asterisk = label ? label.querySelector('.required-asterisk') : null;
+        
+        function checkValue() {
+            if (!asterisk) return;
+            const val = elem.value ? elem.value.trim() : '';
+            if (val !== '') {
+                asterisk.style.display = 'none';
+            } else {
+                asterisk.style.display = 'inline';
+            }
+        }
+        
+        checkValue();
+        elem.addEventListener('input', checkValue);
+        elem.addEventListener('change', checkValue);
+        elem.addEventListener('blur', checkValue);
+    });
+});
+</script>
+{% endblock %}

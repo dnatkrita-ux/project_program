@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-6 col-lg-5">
+        <div class="farm-booking-card mt-4">
+            <div class="farm-card-header text-center justify-content-center">
+                <h4 class="header-title">🔐 เข้าสู่ระบบผู้อนุมัติ (Agricarbook Admin)</h4>
+            </div>
+            <div class="farm-card-body">
+                <form action="{{ url_for('admin_login') }}" method="POST">
+                    <div class="farm-form-group">
+                        <label class="farm-label">รหัสผ่านผู้อนุมัติ (Admin Password)</label>
+                        <input type="password" class="farm-input" name="password" placeholder="กรอกรหัสผ่าน" required autofocus>
+                    </div>
+                    <button type="submit" class="farm-btn-submit">เข้าสู่ระบบ</button>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('user_request') }}" class="text-muted small" style="text-decoration: none;">
+                        ← กลับไปหน้าจองรถ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

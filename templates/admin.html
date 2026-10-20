@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Page Title Header -->
+        <div class="mb-3">
+            <h3 class="fw-bold" style="color: var(--farm-olive-deep); margin: 0; font-size: 1.6rem;">🌾 หน้าจอดำเนินการอนุมัติ (Agricarbook Admin)</h3>
+            <p class="text-muted mb-0" style="font-size: 0.95rem;">ตรวจสอบรายละเอียดและดำเนินการอนุมัติคำขอจองยานพาหนะเกษตร</p>
+        </div>
+        
+        <!-- Pending Bookings Card -->
+        <div class="farm-pending-card mb-4">
+            <div class="farm-pending-card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 1.25rem;">⏳</span>
+                    <span>รายการรออนุมัติ</span>
+                </div>
+                <span class="badge bg-dark text-white rounded-pill px-3 py-1" style="font-weight: 600;">{{ pending_bookings|length }} รายการ</span>
+            </div>
+            <div class="p-3 p-md-4">
+                {% if pending_bookings %}
+                    <div class="row g-3">
+                        {% for b in pending_bookings %}
+                        <div class="col-md-6 mb-2">
+                            <div class="admin-approval-card">
+                                <!-- Card Header: ID + Vehicle Name + Status Badge -->
+                                <div class="admin-card-head">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="admin-code-badge">{{ b['id'] }}</span>
+                                        <h5 class="admin-vehicle-title">{{ b['vehicle'] }}</h5>
+                                    </div>
+                                    <span class="status-badge status-badge-{{ b['status'] }}">{{ b['status'] }}</span>
+                                </div>
+                                
+                                <!-- Card Body: Structured 2x2 Grid + Details -->
+                                <div class="admin-card-body">
+                                    <div class="admin-info-grid">
+                                        <div class="admin-info-tile">
+                                            <span class="admin-info-label">👤 ผู้ขอใช้รถ</span>
+                                            <span class="admin-info-val">{{ b['user'] }}</span>
+                                        </div>
+                                        <div class="admin-info-tile">
+                                            <span class="admin-info-label">📍 สถานที่ปฏิบัติงาน</span>
+                                            <span class="admin-info-val">{{ b['location'] }}</span>
+                                        </div>
+                                        <div class="admin-info-tile">
+                                            <span class="admin-info-label">📅 เริ่มต้นใช้งาน</span>
+                                            <span class="admin-info-val">{{ b['start_date'] }} <small class="text-muted" style="font-size: 0.8rem;">({{ b['start_time'] }})</small></span>
+                                        </div>
+                                        <div class="admin-info-tile">
+                                            <span class="admin-info-label">🏁 สิ้นสุดการใช้งาน</span>
+                                            <span class="admin-info-val">{{ b['end_date'] }} <small class="text-muted" style="font-size: 0.8rem;">({{ b['end_time'] }})</small></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="admin-detail-rows mt-1">
+                                        <div class="admin-detail-row">
+                                            <span class="admin-detail-label">🎯 วัตถุประสงค์:</span>
+                                            <span class="admin-detail-val">{{ b['purpose'] }}</span>
+                                        </div>
+                                    </div>
+
+                                    {% if b['note'] and b['note'] != '-' %}
+                                    <div class="admin-note-box mt-1">
+                                        <span>💬</span>
+                                        <div>
+                                            <strong>หมายเหตุ:</strong> {{ b['note'] }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Action Buttons -->
+                                    <div class="admin-card-actions">
+                                        <a href="{{ url_for('update_status', booking_id=b['id'], status='อนุมัติ') }}" 
+                                           class="farm-btn farm-btn-success flex-fill text-center">
+                                            ✔ อนุมัติ
+                                        </a>
+                                        <a href="{{ url_for('update_status', booking_id=b['id'], status='ไม่อนุมัติ') }}" 
+                                           class="farm-btn farm-btn-danger flex-fill text-center" 
+                                           onclick="return confirm('ยืนยันไม่อนุมัติคำขอ {{ b['id'] }} หรือไม่?');">
+                                            ✖ ไม่อนุมัติ
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <p class="mb-0 fs-5">✨ ยอดเยี่ยม! ไม่มีรายการรออนุมัติในขณะนี้</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- All Bookings History -->
+        <div class="farm-table-card-yellow">
+            <div class="farm-card-header-clipboard d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span>📜</span>
+                    <span>ประวัติรายการจองทั้งหมด</span>
+                </div>
+                <span class="badge bg-white text-dark rounded-pill px-3 py-1" style="font-weight: 600;">{{ all_bookings|length }} รายการ</span>
+            </div>
+            <div class="farm-table-wrapper">
+                <table class="farm-zebra-table text-center">
+                    <thead>
+                        <tr>
+                            <th>รหัส</th>
+                            <th>ยานพาหนะ</th>
+                            <th>ผู้ขอใช้รถ</th>
+                            <th>เริ่มต้นใช้งาน</th>
+                            <th>สิ้นสุดการใช้งาน</th>
+                            <th>สถานที่ปฏิบัติงาน</th>
+                            <th>วัตถุประสงค์</th>
+                            <th>สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in all_bookings %}
+                        <tr>
+                            <td class="fw-bold">{{ b['id'] }}</td>
+                            <td class="fw-bold text-dark">{{ b['vehicle'] }}</td>
+                            <td>{{ b['user'] }}</td>
+                            <td>{{ b['start_date'] }} <small class="text-muted">({{ b['start_time'] }})</small></td>
+                            <td>{{ b['end_date'] }} <small class="text-muted">({{ b['end_time'] }})</small></td>
+                            <td>{{ b['location'] }}</td>
+                            <td>{{ b['purpose'] }}</td>
+                            <td>
+                                <span class="status-badge status-badge-{{ b['status'] }}">{{ b['status'] }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-muted py-4">ยังไม่มีประวัติการจอง</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

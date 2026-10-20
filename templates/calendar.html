@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10">
+        <!-- Schedule View Card Matching Image 3 -->
+        <div class="farm-schedule-card">
+            <!-- Header bar with Tractor Cart & Delivery Truck -->
+            <div class="farm-schedule-header">
+                <div>
+                    <img src="{{ url_for('static', filename='images/schedule_tractor_cart.png') }}" alt="Tractor with trailer" class="farm-schedule-header-icon">
+                </div>
+                <div>
+                    <h3 class="farm-schedule-title">ตารางการใช้รถ (Schedule View)</h3>
+                </div>
+                <div>
+                    <img src="{{ url_for('static', filename='images/schedule_delivery_truck.png') }}" alt="Delivery truck" class="farm-schedule-header-icon">
+                </div>
+            </div>
+
+            <!-- Schedule Grid Table -->
+            <div class="farm-table-wrapper">
+                <table class="farm-schedule-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 28%;">ยานพาหนะ / เครื่องจักรเกษตร</th>
+                            <th style="width: 50%;">กำหนดการและรายละเอียดการใช้งาน</th>
+                            <th style="width: 22%;">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in events %}
+                        <tr>
+                            <td class="fw-bold text-dark ps-4" style="font-size: 1.02rem;">
+                                {{ e.vehicle }}
+                            </td>
+                            <td class="ps-4">
+                                <div class="fw-bold" style="color: #2b3034; font-size: 0.98rem;">
+                                    {% if e.start_date == e.end_date %}
+                                        📅 {{ e.start_date }} (⏰ {{ e.start_time }} - {{ e.end_time }})
+                                    {% else %}
+                                        📅 {{ e.start_date }} {{ e.start_time }} ถึง 🏁 {{ e.end_date }} {{ e.end_time }}
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small mt-1">
+                                    ผู้ขอใช้รถ: {{ e.user }} | วัตถุประสงค์: {{ e.purpose }}
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="status-badge status-badge-{{ e.status }}">{{ e.status }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-5">
+                                🌾 ยังไม่มีกำหนดการใช้รถในตาราง
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
