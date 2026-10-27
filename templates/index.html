@@ -207,16 +207,16 @@
 
                     <!-- วันที่เริ่มต้นใช้งาน และ เวลาเริ่มต้นใช้งาน -->
                     <div class="farm-form-group">
-                        <div class="farm-datetime-grid">
-                            <div>
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6">
                                 <label class="farm-label">วันที่เริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
                                 <input type="date" class="farm-input" name="start_date" id="startDateInput" min="{{ today }}" required>
                                 <small class="text-muted" style="font-size: 0.78rem;">* ต้องเป็นวันนี้หรือในอนาคต</small>
                             </div>
-                            <div>
+                            <div class="col-12 col-md-6">
                                 <label class="farm-label">เวลาเริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
                                 <select class="farm-select" name="start_time" id="startTimeInput" required>
-                                    <option value="" disabled selected>-- เลือกเวลาเริ่มต้น (06:00 - 22:00) --</option>
+                                    <option value="" disabled selected>-- เลือกเวลาเริ่มต้น --</option>
                                     {% for t in allowed_times %}
                                     <option value="{{ t }}">{{ t }} น.</option>
                                     {% endfor %}
@@ -228,16 +228,16 @@
 
                     <!-- วันที่สิ้นสุดการใช้งาน และ เวลาสิ้นสุดการใช้งาน -->
                     <div class="farm-form-group">
-                        <div class="farm-datetime-grid">
-                            <div>
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6">
                                 <label class="farm-label">วันที่สิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
                                 <input type="date" class="farm-input" name="end_date" id="endDateInput" min="{{ today }}" required>
                                 <small class="text-muted" style="font-size: 0.78rem;">* ห้ามจองย้อนหลัง และจองได้ไม่เกิน 1 อาทิตย์ (สูงสุด 7 วัน)</small>
                             </div>
-                            <div>
+                            <div class="col-12 col-md-6">
                                 <label class="farm-label">เวลาสิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
                                 <select class="farm-select" name="end_time" id="endTimeInput" required>
-                                    <option value="" disabled selected>-- เลือกเวลาสิ้นสุด (06:00 - 22:00) --</option>
+                                    <option value="" disabled selected>-- เลือกเวลาสิ้นสุด --</option>
                                     {% for t in allowed_times %}
                                     <option value="{{ t }}">{{ t }} น.</option>
                                     {% endfor %}
@@ -373,11 +373,11 @@
 
                     <!-- วันที่ & เวลาเริ่มต้น -->
                     <div class="row g-2 mb-3">
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <label class="farm-label">วันที่เริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
                             <input type="date" class="farm-input" name="start_date" id="editStartDateInput" min="{{ today }}" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <label class="farm-label">เวลาเริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
                             <select class="farm-select" name="start_time" id="editStartTimeSelect" required>
                                 {% for t in allowed_times %}
@@ -389,11 +389,11 @@
 
                     <!-- วันที่ & เวลาสิ้นสุด -->
                     <div class="row g-2 mb-3">
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <label class="farm-label">วันที่สิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
                             <input type="date" class="farm-input" name="end_date" id="editEndDateInput" min="{{ today }}" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <label class="farm-label">เวลาสิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
                             <select class="farm-select" name="end_time" id="editEndTimeSelect" required>
                                 {% for t in allowed_times %}
@@ -502,6 +502,12 @@
 
 <!-- JavaScript จัดการซ่อนดอกจันสีแดงเมื่อพิมพ์เสร็จ และระบบตรวจสอบความถูกต้องของวันเวลา -->
 <script>
+// Flatpickr instances
+let mainStartPicker = null;
+let mainEndPicker = null;
+let editStartPicker = null;
+let editEndPicker = null;
+
 // ฟังก์ชันเปิด Modal แก้ไขคำขอจอง
 function openEditBookingModal(booking) {
     if (!booking) return;
@@ -551,6 +557,20 @@ function openEditBookingModal(booking) {
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
         endDateInput.max = `${yyyy}-${mm}-${dd}`;
+    }
+
+    // ซิงค์กับ Flatpickr ถ้ามีการใช้งาน
+    if (editStartPicker) {
+        editStartPicker.setDate(booking.start_date || todayStr, true);
+    }
+    if (editEndPicker) {
+        editEndPicker.setDate(booking.end_date || booking.start_date || todayStr, true);
+        if (booking.start_date) {
+            const d = new Date(booking.start_date + 'T00:00:00');
+            d.setDate(d.getDate() + 7);
+            editEndPicker.set('minDate', booking.start_date || todayStr);
+            editEndPicker.set('maxDate', d);
+        }
     }
 
     const modal = new bootstrap.Modal(document.getElementById('editBookingModal'));
@@ -625,27 +645,151 @@ document.addEventListener('DOMContentLoaded', function() {
     const endTimeInput = document.getElementById('endTimeInput');
     const bookingForm = document.querySelector('form[action="{{ url_for("user_request") }}"]');
 
-    if (startDateInput && endDateInput) {
-        startDateInput.addEventListener('change', function() {
-            const startVal = this.value;
-            if (startVal) {
-                // วันสิ้นสุดต้องไม่ก่อนวันเริ่มต้น
-                endDateInput.min = startVal;
-                
-                // คำนวณวันสิ้นสุดสูงสุดไม่เกิน 7 วัน (1 อาทิตย์)
-                const d = new Date(startVal + 'T00:00:00');
-                d.setDate(d.getDate() + 7);
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                const maxDateStr = `${yyyy}-${mm}-${dd}`;
-                endDateInput.max = maxDateStr;
+    function getClientTodayStr() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    const localToday = getClientTodayStr();
 
-                if (endDateInput.value && (endDateInput.value < startVal || endDateInput.value > maxDateStr)) {
-                    endDateInput.value = startVal;
+    if (startDateInput) startDateInput.min = localToday;
+    if (endDateInput) endDateInput.min = localToday;
+
+    // เริ่มต้นใช้งาน Flatpickr พร้อมปิด disableMobile เพื่อให้มือถือใช้ปฏิทินที่ล็อควันอดีตไม่ให้กดได้ 100%
+    if (typeof flatpickr !== 'undefined') {
+        mainStartPicker = flatpickr("#startDateInput", {
+            locale: "th",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altInputClass: "farm-input",
+            altFormat: "d/m/Y",
+            minDate: "today",
+            disableMobile: true,
+            onChange: function(selectedDates) {
+                if (selectedDates.length > 0) {
+                    const startD = selectedDates[0];
+                    const maxD = new Date(startD);
+                    maxD.setDate(maxD.getDate() + 7);
+
+                    if (mainEndPicker) {
+                        mainEndPicker.set('minDate', startD);
+                        mainEndPicker.set('maxDate', maxD);
+
+                        if (mainEndPicker.selectedDates[0]) {
+                            if (mainEndPicker.selectedDates[0] < startD) {
+                                mainEndPicker.setDate(startD, true);
+                            } else if (mainEndPicker.selectedDates[0] > maxD) {
+                                mainEndPicker.setDate(maxD, true);
+                            }
+                        }
+                    }
                 }
             }
         });
+
+        mainEndPicker = flatpickr("#endDateInput", {
+            locale: "th",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altInputClass: "farm-input",
+            altFormat: "d/m/Y",
+            minDate: "today",
+            disableMobile: true,
+            onChange: function(selectedDates) {
+                if (selectedDates.length > 0 && mainStartPicker && mainStartPicker.selectedDates[0]) {
+                    const startD = mainStartPicker.selectedDates[0];
+                    const maxD = new Date(startD);
+                    maxD.setDate(maxD.getDate() + 7);
+                    if (selectedDates[0] < startD) {
+                        alert('⚠️ ข้อผิดพลาด: วันที่สิ้นสุดต้องไม่เกิดขึ้นก่อนวันที่เริ่มต้นใช้งาน');
+                        mainEndPicker.setDate(startD, true);
+                    } else if (selectedDates[0] > maxD) {
+                        alert('⚠️ ข้อผิดพลาด: ไม่สามารถจองรถเกิน 1 อาทิตย์ได้ (สูงสุดไม่เกิน 7 วัน)');
+                        mainEndPicker.setDate(maxD, true);
+                    }
+                }
+            }
+        });
+
+        editStartPicker = flatpickr("#editStartDateInput", {
+            locale: "th",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altInputClass: "farm-input",
+            altFormat: "d/m/Y",
+            minDate: "today",
+            disableMobile: true,
+            onChange: function(selectedDates) {
+                if (selectedDates.length > 0 && editEndPicker) {
+                    const startD = selectedDates[0];
+                    const maxD = new Date(startD);
+                    maxD.setDate(maxD.getDate() + 7);
+                    editEndPicker.set('minDate', startD);
+                    editEndPicker.set('maxDate', maxD);
+                }
+            }
+        });
+
+        editEndPicker = flatpickr("#editEndDateInput", {
+            locale: "th",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altInputClass: "farm-input",
+            altFormat: "d/m/Y",
+            minDate: "today",
+            disableMobile: true
+        });
+    }
+
+    // กลไกป้องกันการเลือกวันย้อนหลังในระดับ Native Input (ดักจับทั้ง change, input, blur)
+    function validateStartDateRealtime() {
+        if (!startDateInput) return;
+        const minD = startDateInput.min || localToday;
+        if (startDateInput.value && startDateInput.value < minD) {
+            alert('⚠️ ไม่สามารถเลือกวันย้อนหลังได้: วันที่เริ่มต้นการใช้งานต้องเป็นวันนี้หรือวันข้างหน้าเท่านั้น');
+            startDateInput.value = minD;
+        }
+        if (startDateInput.value && endDateInput) {
+            endDateInput.min = startDateInput.value;
+            const d = new Date(startDateInput.value + 'T00:00:00');
+            d.setDate(d.getDate() + 7);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const maxDateStr = `${yyyy}-${mm}-${dd}`;
+            endDateInput.max = maxDateStr;
+
+            if (endDateInput.value && (endDateInput.value < startDateInput.value || endDateInput.value > maxDateStr)) {
+                endDateInput.value = startDateInput.value;
+            }
+        }
+    }
+
+    if (startDateInput) {
+        startDateInput.addEventListener('change', validateStartDateRealtime);
+        startDateInput.addEventListener('input', validateStartDateRealtime);
+        startDateInput.addEventListener('blur', validateStartDateRealtime);
+    }
+
+    function validateEndDateRealtime() {
+        if (!endDateInput) return;
+        const minD = (startDateInput && startDateInput.value) ? startDateInput.value : localToday;
+        if (endDateInput.value && endDateInput.value < minD) {
+            alert('⚠️ ไม่สามารถเลือกวันย้อนหลังได้: วันที่สิ้นสุดต้องไม่เกิดขึ้นก่อนวันที่เริ่มต้นใช้งาน');
+            endDateInput.value = minD;
+        }
+        if (endDateInput.max && endDateInput.value > endDateInput.max) {
+            alert('⚠️ ข้อผิดพลาด: ไม่สามารถจองรถเกิน 1 อาทิตย์ได้ (สูงสุดไม่เกิน 7 วัน)');
+            endDateInput.value = endDateInput.max;
+        }
+    }
+
+    if (endDateInput) {
+        endDateInput.addEventListener('change', validateEndDateRealtime);
+        endDateInput.addEventListener('input', validateEndDateRealtime);
+        endDateInput.addEventListener('blur', validateEndDateRealtime);
     }
 
     if (bookingForm) {
@@ -726,11 +870,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const editBookingForm = document.getElementById('editBookingForm');
 
     if (editStartDateInput && editEndDateInput) {
-        editStartDateInput.addEventListener('change', function() {
-            const startVal = this.value;
-            if (startVal) {
-                editEndDateInput.min = startVal;
-                const d = new Date(startVal + 'T00:00:00');
+        function validateEditStartDateRealtime() {
+            const startVal = editStartDateInput.value;
+            const minD = editStartDateInput.min || localToday;
+            if (startVal && startVal < minD) {
+                alert('⚠️ ไม่สามารถเลือกวันย้อนหลังได้: วันที่เริ่มต้นการใช้งานต้องเป็นวันนี้หรือวันข้างหน้า');
+                editStartDateInput.value = minD;
+            }
+            if (editStartDateInput.value) {
+                editEndDateInput.min = editStartDateInput.value;
+                const d = new Date(editStartDateInput.value + 'T00:00:00');
                 d.setDate(d.getDate() + 7);
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -738,11 +887,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const maxDateStr = `${yyyy}-${mm}-${dd}`;
                 editEndDateInput.max = maxDateStr;
 
-                if (editEndDateInput.value && (editEndDateInput.value < startVal || editEndDateInput.value > maxDateStr)) {
-                    editEndDateInput.value = startVal;
+                if (editEndDateInput.value && (editEndDateInput.value < editStartDateInput.value || editEndDateInput.value > maxDateStr)) {
+                    editEndDateInput.value = editStartDateInput.value;
                 }
             }
-        });
+        }
+        editStartDateInput.addEventListener('change', validateEditStartDateRealtime);
+        editStartDateInput.addEventListener('input', validateEditStartDateRealtime);
+        editStartDateInput.addEventListener('blur', validateEditStartDateRealtime);
     }
 
     if (editBookingForm) {
