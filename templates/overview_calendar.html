@@ -23,6 +23,43 @@
             </div>
 
             <div class="p-3 p-md-4">
+                {% if rejected_notifications %}
+                <!-- กล่องแจ้งเตือนเฉพาะผู้ใช้งานที่ไม่ได้รับการอนุมัติ (แจ้งเตือนส่วนบุคคล ไม่แสดงให้ผู้อื่นเห็น) -->
+                <div class="alert border-0 shadow-sm mb-4 p-3" style="border-radius: 12px; background-color: #fff5f5; border-left: 5px solid #c94c5d !important;">
+                    <div class="d-flex align-items-start gap-3">
+                        <span style="font-size: 1.4rem; line-height: 1.2;">🔔</span>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                                <strong style="color: #931d2d; font-size: 0.96rem;">
+                                    ⚠️ แจ้งเตือนเฉพาะคุณ: รายการคำขอจองที่ไม่ได้รับการอนุมัติ
+                                </strong>
+                                <span class="badge bg-danger rounded-pill" style="font-size: 0.72rem;">{{ rejected_notifications|length }} รายการ</span>
+                            </div>
+                            <div class="d-flex flex-column gap-2 mt-2">
+                                {% for rn in rejected_notifications %}
+                                <div class="p-2 px-3 rounded bg-white border border-danger-subtle d-flex flex-wrap justify-content-between align-items-center gap-2" style="font-size: 0.86rem;">
+                                    <div>
+                                        <span class="fw-bold" style="color: #931d2d;">❌ คำขอ {{ rn.booking_id }}</span>:
+                                        <strong class="text-dark">{{ rn.vehicle }}</strong>
+                                        {% if rn.start_date %}<span class="text-muted ms-1 small">({{ rn.start_date }}{% if rn.start_date != rn.end_date and rn.end_date %} ถึง {{ rn.end_date }}{% endif %})</span>{% endif %}
+                                        {% if rn.reason and rn.reason != '-' %}
+                                        <div class="text-muted small mt-1">
+                                            💬 หมายเหตุ/เหตุผลจากเจ้าหน้าที่: <strong class="text-danger">{{ rn.reason }}</strong>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <span class="badge bg-danger text-white px-2 py-1" style="font-size: 0.75rem; border-radius: 6px;">ไม่อนุมัติ</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted mt-2 d-block" style="font-size: 0.78rem;">
+                                * รายการที่ไม่ได้รับการอนุมัติจะไม่แสดงบนตารางการใช้รถ เพื่อให้รถคันนี้ว่างและผู้อื่นสามารถจองต่อได้ตามปกติ
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Filter & Vehicle Selection Toolbar -->
                 <div class="card border-0 mb-4" style="background-color: #f7f9f2; border: 1.5px solid var(--farm-olive-border-soft) !important; border-radius: 12px;">
                     <div class="card-body p-3">
@@ -45,7 +82,9 @@
                                     <option value="ALL">ทั้งหมดทุกสถานะ</option>
                                     <option value="อนุมัติ">✔ อนุมัติแล้ว</option>
                                     <option value="รออนุมัติ">⏳ รออนุมัติ</option>
+                                    {% if is_admin_view %}
                                     <option value="ไม่อนุมัติ">✖ ไม่อนุมัติ</option>
+                                    {% endif %}
                                 </select>
                             </div>
 
@@ -72,9 +111,11 @@
                             <span class="badge" style="background-color: #d99b26; color: white; padding: 5px 10px; border-radius: 6px;">
                                 ⏳ รออนุมัติ
                             </span>
+                            {% if is_admin_view %}
                             <span class="badge" style="background-color: #c94c5d; color: white; padding: 5px 10px; border-radius: 6px;">
                                 ✖ ไม่อนุมัติ
                             </span>
+                            {% endif %}
                             <span class="text-muted ms-auto small">
                                 * คลิกที่รายการบนตารางเพื่อดูรายละเอียดฉบับเต็ม
                             </span>
@@ -186,7 +227,10 @@
                             📅 ตารางการใช้รถในมุมมองปฏิทิน (Vehicle Usage Calendar)
                         </h5>
                     </div>
-                    <div id="fullCalendarWrap" style="min-height: 580px; background: white; padding: 12px; border-radius: 14px; border: 1.5px solid var(--farm-olive-border-soft); overflow-x: auto;">
+                    <div id="fullCalendarWrap" style="min-height: 580px; background: white; padding: 12px; border-radius: 14px; border: 1.5px solid var(--farm-olive-border-soft); overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                        <div class="d-md-none text-center text-muted mb-2 py-1 px-2 rounded" style="font-size: 0.78rem; background: #fdf5f6; border: 1px dashed var(--farm-rose-border);">
+                            👉 ในมุมมองสัปดาห์ สามารถเลื่อนซ้าย-ขวา เพื่อดูตารางทั้ง 7 วันได้อย่างชัดเจน
+                        </div>
                         <div id="calendar" style="min-width: 100%;"></div>
                     </div>
                 </div>
@@ -342,6 +386,58 @@
     }
 }
 
+/* Week View Horizontal Scroll on Mobile & Small Screens */
+.fc-timeGridWeek-view {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.fc-timeGridWeek-view .fc-scrollgrid {
+    min-width: 700px !important;
+}
+
+.fc-timeGridWeek-view .fc-col-header,
+.fc-timeGridWeek-view .fc-timegrid-body {
+    min-width: 700px !important;
+}
+
+/* Day Column Header in Week View */
+.fc-week-day-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.25;
+    padding: 3px 2px;
+}
+.fc-week-day-header .day-name {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--farm-olive-deep);
+    white-space: nowrap;
+}
+.fc-week-day-header .day-num {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #555555;
+    margin-top: 1px;
+    white-space: nowrap;
+}
+.fc-day-today .fc-week-day-header .day-name,
+.fc-day-today .fc-week-day-header .day-num {
+    color: var(--farm-olive-hover) !important;
+    font-weight: 800 !important;
+}
+
+/* Time Slot Labels (06:00, 07:00, ... 22:00) */
+.fc .fc-timegrid-slot-label-cushion {
+    font-size: 0.76rem !important;
+    font-weight: 600 !important;
+    color: #555555 !important;
+    padding: 0 4px !important;
+    white-space: nowrap !important;
+}
+
 /* Custom In-Cell Event Card showing Order ID immediately */
 .fc-custom-event-card {
     padding: 4px 6px;
@@ -352,6 +448,81 @@
     overflow: hidden;
     word-break: break-word;
     overflow-wrap: anywhere;
+}
+
+/* Event Card in TimeGrid (Week & Day Views) */
+.fc-timegrid-event {
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18) !important;
+    border: none !important;
+}
+
+.fc-timegrid-event .fc-event-main {
+    padding: 1px !important;
+    height: 100% !important;
+}
+
+.fc-timegrid-card {
+    padding: 3px 5px !important;
+    font-size: 0.74rem !important;
+    line-height: 1.25 !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    white-space: normal !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.fc-timegrid-card .fc-event-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 3px !important;
+    margin-bottom: 2px !important;
+}
+
+.fc-timegrid-card .fc-order-id {
+    font-size: 0.70rem !important;
+    font-weight: 800 !important;
+    padding: 1px 4px !important;
+    white-space: nowrap !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-radius: 4px !important;
+    color: #fff !important;
+    letter-spacing: 0px !important;
+}
+
+.fc-timegrid-card .fc-status-pill {
+    font-size: 0.65rem !important;
+    font-weight: 700 !important;
+    padding: 1px 5px !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
+}
+
+.fc-timegrid-card .fc-event-vehicle {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    color: #ffffff !important;
+    margin-top: 1px !important;
+}
+
+.fc-timegrid-card .fc-event-time,
+.fc-timegrid-card .fc-event-user {
+    font-size: 0.68rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    color: #ffffff !important;
+    opacity: 0.95 !important;
+    margin-top: 1px !important;
 }
 .fc-event-header {
     display: flex;
@@ -647,6 +818,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return rawEvents.filter(ev => {
             const p = ev.extendedProps || {};
             
+            // Rejection safety: Non-admin users must never see rejected events on the schedule
+            {% if not is_admin_view %}
+            if (p.status === 'ไม่อนุมัติ') {
+                return false;
+            }
+            {% endif %}
+
             // 1. Status Filter
             if (selectedStatus !== 'ALL' && p.status !== selectedStatus) {
                 return false;
@@ -699,7 +877,40 @@ document.addEventListener('DOMContentLoaded', function() {
             locale: 'th',
             firstDay: 1,
             height: 'auto',
+            allDaySlot: false,
+            slotMinTime: '06:00:00',
+            slotMaxTime: '22:30:00',
+            scrollTime: '07:00:00',
+            slotDuration: '00:30:00',
+            slotLabelInterval: '01:00',
+            slotLabelFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            dayHeaderContent: function(arg) {
+                const d = arg.date;
+                const days = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+                const dayStr = days[d.getDay()];
+                const dateNum = d.getDate();
+                const monthNum = d.getMonth() + 1;
+                if (arg.view.type === 'timeGridWeek') {
+                    return {
+                        html: `<div class="fc-week-day-header"><span class="day-name">${dayStr}</span><span class="day-num">${dateNum}/${monthNum}</span></div>`
+                    };
+                }
+            },
+            views: {
+                timeGridWeek: {
+                    dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric' },
+                    slotEventOverlap: true
+                },
+                timeGridDay: {
+                    slotEventOverlap: false
+                }
+            },
             dayMaxEvents: 4,
+            nowIndicator: true,
             events: function(info, successCallback, failureCallback) {
                 // Return synchronous filtered events instantly without network delay
                 successCallback(getFilteredEvents());
@@ -715,6 +926,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 let pillClass = 'status-pending';
                 if (status === 'อนุมัติ') pillClass = 'status-approved';
                 else if (status === 'ไม่อนุมัติ') pillClass = 'status-rejected';
+
+                if (arg.view.type === 'timeGridWeek' || arg.view.type === 'timeGridDay') {
+                    return {
+                        html: `
+                        <div class="fc-custom-event-card fc-timegrid-card">
+                            <div class="fc-event-header">
+                                <span class="fc-order-id">${orderId}</span>
+                                <span class="fc-status-pill ${pillClass}">${status}</span>
+                            </div>
+                            <div class="fc-event-vehicle" title="${vehicle}">🚜 ${vehicle}</div>
+                            ${timeRange ? `<div class="fc-event-time" title="${timeRange}">⏰ ${timeRange}</div>` : ''}
+                            <div class="fc-event-user" title="${user}">👤 ${user}</div>
+                        </div>
+                        `
+                    };
+                }
 
                 return {
                     html: `

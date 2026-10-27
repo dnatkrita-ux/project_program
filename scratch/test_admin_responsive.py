@@ -97,5 +97,30 @@ class TestAdminResponsive(unittest.TestCase):
         self.assertIn('width: 100% !important;', css)
         self.assertIn('box-sizing: border-box !important;', css)
 
+    def test_week_view_readability_and_responsive_styling(self):
+        """ตรวจสอบว่าหน้าตารางการใช้รถมีสไตล์และการตั้งค่ามุมมองสัปดาห์ที่อ่านง่ายในทุกอุปกรณ์ ไม่ตัดคำแนวตั้ง และตัดเวลา 00:00-05:00 ทิ้ง"""
+        with self.client.session_transaction() as sess:
+            sess['logged_in'] = True
+            sess['admin_logged_in'] = True
+            sess['username'] = 'admin'
+            sess['role'] = 'admin'
+
+        res = self.client.get('/approve/overview-calendar')
+        self.assertEqual(res.status_code, 200)
+        html = res.data.decode('utf-8')
+
+        # 1. ตรวจสอบการตั้งค่าช่วงเวลาทำงาน (06:00 - 22:30) และตัด allDaySlot
+        self.assertIn("slotMinTime: '06:00:00'", html)
+        self.assertIn("slotMaxTime: '22:30:00'", html)
+        self.assertIn("allDaySlot: false", html)
+
+        # 2. ตรวจสอบ Header วันแบบชัดเจน (fc-week-day-header) ไม่แตกบรรทัด
+        self.assertIn('fc-week-day-header', html)
+        self.assertIn('fc-timegrid-card', html)
+
+        # 3. ตรวจสอบการตั้งค่าความกว้างขั้นต่ำและการเลื่อนแนวนอนบนหน้าจอมือถือ
+        self.assertIn('.fc-timeGridWeek-view .fc-scrollgrid', html)
+        self.assertIn('min-width: 700px !important;', html)
+
 if __name__ == '__main__':
     unittest.main()

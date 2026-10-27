@@ -1,28 +1,63 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-.toggle-password-btn {
-    border: 1.5px solid var(--farm-input-border, #c8d0a8);
-    border-left: none;
-    background: #ffffff;
-    color: #495057;
-    cursor: pointer;
+/* Password Field Wrapper with Integrated Eye Icon inside the Input */
+.password-field-wrapper {
+    position: relative;
+    width: 100%;
     display: flex;
     align-items: center;
+}
+.password-field-wrapper .farm-input,
+.password-field-wrapper input.password-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-right: 46px !important;
+    border-radius: var(--farm-input-radius, 10px) !important;
+    height: 46px;
+    min-height: 46px;
+    background-color: var(--farm-input-bg, #ffffff);
+    border: 1.5px solid var(--farm-input-border, #c8d0a8);
+    box-sizing: border-box !important;
+}
+.password-field-wrapper .farm-input:focus {
+    border-color: var(--farm-olive, #868F5A) !important;
+    box-shadow: 0 0 0 3px rgba(134, 143, 90, 0.25) !important;
+}
+.password-field-wrapper .toggle-password-btn,
+.toggle-password-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    padding: 0 14px;
-    font-size: 1.1rem;
-    border-top-right-radius: 10px !important;
-    border-bottom-right-radius: 10px !important;
-    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    z-index: 5;
+    padding: 0;
+    margin: 0;
+    font-size: 1.15rem;
+    border-radius: 8px;
+    color: #555555;
+    transition: transform 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
 }
+.password-field-wrapper .toggle-password-btn:hover,
 .toggle-password-btn:hover {
-    background-color: var(--farm-rose-tint, #fdf5f6);
-    color: var(--farm-olive-deep, #2c3315);
+    background-color: rgba(134, 143, 90, 0.12) !important;
+    transform: translateY(-50%) scale(1.08);
 }
-.input-group .farm-input {
-    border-top-right-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
+.password-field-wrapper .toggle-password-btn:active,
+.toggle-password-btn:active {
+    transform: translateY(-50%) scale(0.95);
 }
 </style>
 <div class="row justify-content-center">
@@ -60,17 +95,16 @@
                             </label>
                             <span id="adminPwdCount" class="badge bg-secondary" style="font-size: 0.75rem;">0 / 8 ตัว</span>
                         </div>
-                        <div class="input-group">
+                        <div class="password-field-wrapper">
                             <input type="password" 
-                                   class="farm-input form-control" 
+                                   class="farm-input form-control password-input" 
                                    name="password" 
                                    id="admin_password" 
                                    placeholder="กรอกรหัสผ่านแอดมินอย่างน้อย 8 ตัวอักษร" 
                                    minlength="8" 
                                    required 
-                                   oninput="updateCharCount('admin_password', 'adminPwdCount', 8)"
-                                   style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
-                            <button type="button" class="btn btn-outline-secondary toggle-password-btn" onclick="togglePasswordVisibility('admin_password', this)" title="เปิด/ปิดการมองเห็นรหัสผ่าน" tabindex="-1">
+                                   oninput="updateCharCount('admin_password', 'adminPwdCount', 8)">
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('admin_password', this)" title="เปิด/ปิดการมองเห็นรหัสผ่าน" tabindex="-1" aria-label="เปิด/ปิดการมองเห็นรหัสผ่าน">
                                 <span class="eye-icon">👁️</span>
                             </button>
                         </div>
@@ -115,12 +149,12 @@ function togglePasswordVisibility(inputId, btn) {
         input.type = 'text';
         eyeIcon.innerText = '🙈';
         btn.setAttribute('title', 'ซ่อนรหัสผ่าน');
-        btn.classList.add('btn-light');
+        btn.setAttribute('aria-label', 'ซ่อนรหัสผ่าน');
     } else {
         input.type = 'password';
         eyeIcon.innerText = '👁️';
         btn.setAttribute('title', 'แสดงรหัสผ่าน');
-        btn.classList.remove('btn-light');
+        btn.setAttribute('aria-label', 'แสดงรหัสผ่าน');
     }
 }
 

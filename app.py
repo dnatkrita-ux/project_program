@@ -2070,6 +2070,14 @@ def get_calendar_events_data(viewer_name=None, is_admin=False):
 
     for b in all_bookings:
         status = b['status']
+        # ไม่แสดงคำขอที่ถูกยกเลิกแล้ว
+        if status == 'ยกเลิกแล้ว':
+            continue
+
+        # ไม่แสดงคำขอที่ไม่อนุมัติบนตารางการใช้รถ เพื่อไม่ให้ผู้อื่นเห็น และไม่กีดขวางตารางการใช้งาน
+        if status == 'ไม่อนุมัติ' and not is_admin:
+            continue
+
         if status == 'อนุมัติ':
             bg_color = '#5b7337'  # เขียวมะกอก
             border_color = '#435528'
@@ -2144,6 +2152,14 @@ def get_vehicles_overview_summary(viewer_name=None, is_admin=False):
             b_veh = b['vehicle'].strip()
             # เช็คว่าตรงกับรถคันนี้หรือไม่
             if (code == b_veh or code in b_veh or name in b_veh or (plate != '-' and plate in b_veh)):
+                # ไม่แสดงคำขอที่ถูกยกเลิกแล้ว
+                if b['status'] == 'ยกเลิกแล้ว':
+                    continue
+
+                # ไม่แสดงคำขอที่ไม่อนุมัติในตารางประวัติการใช้งานรถสำหรับคนอื่น
+                if b['status'] == 'ไม่อนุมัติ' and not is_admin:
+                    continue
+
                 is_owner = is_booking_owner(b, viewer_user_identifiers) if viewer_user_identifiers else False
 
                 if is_admin or is_owner:
@@ -2196,6 +2212,47 @@ def get_vehicles_overview_summary(viewer_name=None, is_admin=False):
 
     return today_str, result
 
+def get_user_rejected_notifications(viewer_name):
+    """รวบรวมรายการแจ้งเตือนคำขอที่ไม่ได้รับการอนุมัติ (ไม่อนุมัติ) เฉพาะของผู้ใช้รายนี้ เพื่อแจ้งเตือนส่วนตัว ไม่ให้คนอื่นเห็น"""
+    if not viewer_name:
+        return []
+    rejected_list = []
+    seen_bids = set()
+
+    # 1. ค้นหาจากการแจ้งเตือน Notifications
+    notifs, _ = get_user_notifications(viewer_name)
+    for n in notifs:
+        if n.get('status') == 'ไม่อนุมัติ' and n.get('booking_id'):
+            bid = n.get('booking_id')
+            if bid not in seen_bids:
+                seen_bids.add(bid)
+                rejected_list.append({
+                    'booking_id': bid,
+                    'vehicle': n.get('vehicle', '-'),
+                    'start_date': n.get('start_date', ''),
+                    'end_date': n.get('end_date', ''),
+                    'reason': n.get('reason', '-') or '-',
+                    'created_at': n.get('created_at', '')
+                })
+
+    # 2. ค้นหาจากรายการจองของผู้ใช้โดยตรง (กรณีคำขอมีสถานะ 'ไม่อนุมัติ' ในฐานข้อมูล)
+    my_bookings, _ = get_user_bookings(viewer_name)
+    for b in my_bookings:
+        if b.get('status') == 'ไม่อนุมัติ':
+            bid = b.get('id')
+            if bid not in seen_bids:
+                seen_bids.add(bid)
+                rejected_list.append({
+                    'booking_id': bid,
+                    'vehicle': b.get('vehicle', '-'),
+                    'start_date': b.get('start_date', ''),
+                    'end_date': b.get('end_date', ''),
+                    'reason': b.get('note', '-') if b.get('note') else '-',
+                    'created_at': b.get('start_date', '')
+                })
+
+    return rejected_list
+
 @app.route('/overview-calendar')
 def overview_calendar():
     """หน้าตารางการใช้รถสำหรับผู้ใช้ทั่วไป โหลดข้อมูลสรุปยานพาหนะและการจองล่วงหน้าแบบ SSR เพื่อความเร็วสูงสุด"""
@@ -2204,13 +2261,18 @@ def overview_calendar():
     today_str, vehicles_overview = get_vehicles_overview_summary(viewer_name=viewer_name, is_admin=is_admin)
     events = get_calendar_events_data(viewer_name=viewer_name, is_admin=is_admin)
     vehicles = get_vehicles()
+
+    # ดึงการแจ้งเตือนเฉพาะผู้ที่ไม่ได้รับการอนุมัติ (ไม่แสดงให้ผู้อื่นเห็น)
+    rejected_notifications = get_user_rejected_notifications(viewer_name) if viewer_name and not is_admin else []
+
     return render_template(
         'overview_calendar.html',
         vehicles=vehicles,
         vehicles_overview=vehicles_overview,
         all_events=events,
         today=today_str,
-        is_admin_view=is_admin
+        is_admin_view=is_admin,
+        rejected_notifications=rejected_notifications
     )
 
 @app.route('/approve/overview-calendar')
@@ -2227,7 +2289,8 @@ def admin_overview_calendar():
         vehicles_overview=vehicles_overview,
         all_events=events,
         today=today_str,
-        is_admin_view=True
+        is_admin_view=True,
+        rejected_notifications=[]
     )
 
 @app.route('/api/calendar-events')
