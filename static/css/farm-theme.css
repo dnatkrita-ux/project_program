@@ -1363,7 +1363,5 @@ html, body {
 
     .btn {
         max-width: 100%;
-        white-space: normal;
-        word-break: break-word;
     }
 }

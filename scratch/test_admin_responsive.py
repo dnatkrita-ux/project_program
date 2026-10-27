@@ -33,13 +33,11 @@ class TestAdminResponsive(unittest.TestCase):
         self.assertIn('data-status="อนุมัติ"', html)
         self.assertIn('data-status="ไม่อนุมัติ"', html)
 
-        # ตรวจสอบปุ่มสลับมุมมอง (ตาราง vs การ์ดมือถือ)
-        self.assertIn('id="btnViewTable"', html)
-        self.assertIn('id="btnViewCards"', html)
-
-        # ตรวจสอบคอนเทนเนอร์ทั้ง 2 มุมมอง
+        # ตรวจสอบว่าใช้ตารางรูปแบบเดียวกันทุกอุปกรณ์ (ไม่มีการแยกเป็นโหมดการ์ดมือถือที่ทำให้ระบบต่างกัน)
         self.assertIn('id="adminTableView"', html)
-        self.assertIn('id="adminCardView"', html)
+        self.assertIn('id="adminBookingsTable"', html)
+        self.assertNotIn('id="btnViewCards"', html)
+        self.assertNotIn('id="adminCardView"', html)
 
         # ตรวจสอบแท็กและสไตล์ที่ป้องกันข้อความแตก/ตกบรรทัด
         self.assertIn('class="farm-zebra-table', html)

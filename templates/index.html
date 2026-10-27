@@ -87,16 +87,16 @@
                 {% endif %}
 
                 {% if my_bookings %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" style="font-size: 0.92rem;">
+                <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 0.92rem; min-width: 680px;">
                         <thead style="background-color: #f8f9fa;">
                             <tr>
-                                <th style="width: 10%;">รหัสจอง</th>
-                                <th style="width: 22%;">ยานพาหนะ</th>
-                                <th style="width: 26%;">วันและเวลาใช้งาน</th>
-                                <th style="width: 15%;">สถานที่ / วัตถุประสงค์</th>
-                                <th style="width: 13%; text-align: center;">สถานะ</th>
-                                <th style="width: 14%; text-align: center;">การดำเนินการ</th>
+                                <th style="width: 10%; white-space: nowrap;">รหัสจอง</th>
+                                <th style="width: 22%; white-space: nowrap;">ยานพาหนะ</th>
+                                <th style="width: 26%; white-space: nowrap;">วันและเวลาใช้งาน</th>
+                                <th style="width: 15%; white-space: nowrap;">สถานที่ / วัตถุประสงค์</th>
+                                <th style="width: 13%; text-align: center; white-space: nowrap;">สถานะ</th>
+                                <th style="width: 14%; text-align: center; white-space: nowrap;">การดำเนินการ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -143,13 +143,17 @@
 
                                         {% if mb.can_cancel %}
                                         <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
-                                                onclick="openCancelBookingModal('{{ mb.id }}', '{{ mb.vehicle }}', '{{ mb.start_date }}', '{{ mb.start_time }}')"
+                                                onclick="openCancelBookingModal('{{ mb.id }}', '{{ mb.vehicle }}', '{{ mb.start_date }}', '{{ mb.start_time }}', '{{ mb.status }}')"
                                                 style="font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;"
                                                 title="ขอยกเลิกคำขอจองนี้">
                                             ❌ ยกเลิก
                                         </button>
                                         {% endif %}
                                     </div>
+                                    {% elif mb.status == 'อนุมัติ' %}
+                                    <span class="badge bg-success-subtle text-success border border-success px-2 py-1" style="font-size: 0.78rem; border-radius: 6px; font-weight: 600;" title="รถที่อนุมัติการจองแล้วไม่สามารถยกเลิกหรือแก้ไขได้">
+                                        🔒 อนุมัติแล้ว (ล็อค)
+                                    </span>
                                     {% elif mb.status == 'ยกเลิกแล้ว' %}
                                     <span class="text-muted" style="font-size: 0.78rem;">🚫 ยกเลิกแล้ว</span>
                                     {% elif mb.status == 'ไม่อนุมัติ' %}
@@ -501,6 +505,10 @@
 // ฟังก์ชันเปิด Modal แก้ไขคำขอจอง
 function openEditBookingModal(booking) {
     if (!booking) return;
+    if (booking.status === 'อนุมัติ') {
+        alert('⚠️ ข้อผิดพลาด: รายการจองนี้ได้รับการอนุมัติแล้ว ไม่สามารถแก้ไขได้');
+        return;
+    }
     const form = document.getElementById('editBookingForm');
     form.action = `/booking/edit/${booking.id}`;
     document.getElementById('editBookingIdBadge').textContent = `รหัสคำขอจอง: ${booking.id}`;
@@ -550,7 +558,11 @@ function openEditBookingModal(booking) {
 }
 
 // ฟังก์ชันเปิด Modal ยกเลิกคำขอจอง
-function openCancelBookingModal(bookingId, vehicle, startDate, startTime) {
+function openCancelBookingModal(bookingId, vehicle, startDate, startTime, status) {
+    if (status === 'อนุมัติ') {
+        alert('⚠️ ข้อผิดพลาด: รายการจองนี้ได้รับการอนุมัติแล้ว ไม่สามารถยกเลิกได้');
+        return;
+    }
     const form = document.getElementById('cancelBookingForm');
     form.action = `/booking/cancel/${bookingId}`;
     document.getElementById('cancelBookingIdText').textContent = bookingId;

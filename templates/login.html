@@ -35,10 +35,10 @@
 
             <!-- Card Body with Tabs -->
             <div class="farm-card-body p-4">
-                <!-- Navigation Tabs (Only User Login & Register - Admin Tab Removed) -->
+                <!-- Navigation Tabs: Login, Register, and Forgot Password -->
                 <ul class="nav nav-pills nav-fill mb-4" id="loginTabs" role="tablist" style="background: #f7f9f2; padding: 6px; border-radius: 12px; border: 1.5px solid var(--farm-olive-border-soft);">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link {% if active_tab != 'register' %}active{% endif %}" id="login-tab" data-bs-toggle="pill" data-bs-target="#login-panel" type="button" role="tab" style="font-weight: 700; border-radius: 8px;">
+                        <button class="nav-link {% if active_tab not in ['register', 'forgot'] %}active{% endif %}" id="login-tab" data-bs-toggle="pill" data-bs-target="#login-panel" type="button" role="tab" style="font-weight: 700; border-radius: 8px;">
                             🚜 เข้าสู่ระบบ
                         </button>
                     </li>
@@ -47,11 +47,16 @@
                             📝 สมัครสมาชิกใหม่
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if active_tab == 'forgot' %}active{% endif %}" id="forgot-tab" data-bs-toggle="pill" data-bs-target="#forgot-panel" type="button" role="tab" style="font-weight: 700; border-radius: 8px;">
+                            🔑 ลืมรหัสผ่าน
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content" id="loginTabsContent">
                     <!-- Tab 1: Unified Login (Login with Email or Thai Citizen ID 13 Digits) -->
-                    <div class="tab-pane fade {% if active_tab != 'register' %}show active{% endif %}" id="login-panel" role="tabpanel">
+                    <div class="tab-pane fade {% if active_tab not in ['register', 'forgot'] %}show active{% endif %}" id="login-panel" role="tabpanel">
                         <div class="alert alert-light border d-flex align-items-center gap-2 py-2 mb-3" style="font-size: 0.85rem; background-color: var(--farm-rose-tint); border-color: var(--farm-rose-border) !important;">
                             <span>💡</span>
                             <div>
@@ -69,7 +74,12 @@
                             <div class="farm-form-group">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <label class="farm-label mb-0">รหัสผ่าน (Password อย่างน้อย 8 ตัวอักษร) <span class="required-asterisk">*</span></label>
-                                    <span id="loginPwdCount" class="badge bg-secondary" style="font-size: 0.75rem;">0 / 8 ตัว</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a href="javascript:void(0)" onclick="switchToForgotTab()" class="text-decoration-none small fw-bold" style="color: var(--farm-olive-deep); font-size: 0.82rem;">
+                                            ❓ ลืมรหัสผ่าน?
+                                        </a>
+                                        <span id="loginPwdCount" class="badge bg-secondary" style="font-size: 0.75rem;">0 / 8 ตัว</span>
+                                    </div>
                                 </div>
                                 <div class="input-group">
                                     <input type="password" 
@@ -290,6 +300,134 @@
                                 📝 สมัครสมาชิกผู้ขอใช้รถ
                             </button>
                         </form>
+                    </div>
+
+                    <!-- Tab 3: Forgot Password (OTP Verification & Reset Password) -->
+                    <div class="tab-pane fade {% if active_tab == 'forgot' %}show active{% endif %}" id="forgot-panel" role="tabpanel">
+                        <div class="alert alert-light border d-flex align-items-center gap-2 py-2 mb-3" style="font-size: 0.85rem; background-color: var(--farm-rose-tint); border-color: var(--farm-rose-border) !important;">
+                            <span>💡</span>
+                            <div>
+                                ระบุ <strong>อีเมล</strong> หรือ <strong>เลขประจำตัวประชาชน (13 หลัก)</strong> เพื่อรับรหัส OTP 6 หลัก และตั้งรหัสผ่านใหม่
+                            </div>
+                        </div>
+
+                        <!-- Alert Box for AJAX responses -->
+                        <div id="forgotAlertBox" class="alert d-none py-2 px-3 mb-3" style="font-size: 0.86rem; border-radius: 8px;"></div>
+
+                        <!-- Step 1: Request OTP -->
+                        <div id="forgotStep1">
+                            <div class="farm-form-group">
+                                <label class="farm-label">อีเมล หรือ เลขประจำตัวประชาชน 13 หลัก <span class="required-asterisk">*</span></label>
+                                <input type="text" class="farm-input" id="forgot_identifier" placeholder="เช่น somchai@farm.go.th หรือ 1-1001-00111-11-1" autocomplete="off">
+                                <small class="text-muted" style="font-size: 0.78rem;">* ระบบจะส่งรหัสยืนยัน OTP ไปยังอีเมลที่ผูกไว้กับบัญชีนี้</small>
+                            </div>
+
+                            <button type="button" class="farm-btn-submit" id="btnForgotSendOtp" onclick="handleForgotSendOtp()">
+                                📩 ขอรับรหัส OTP เพื่อตั้งรหัสผ่านใหม่
+                            </button>
+
+                            <div class="text-center mt-3">
+                                <a href="javascript:void(0)" onclick="switchToLoginTab()" class="text-decoration-none small text-muted">
+                                    ➔ จำรหัสผ่านได้แล้ว? กลับสู่หน้าเข้าสู่ระบบ
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Verify OTP & Enter New Password -->
+                        <div id="forgotStep2" style="display: none;">
+                            <!-- Target Email Info Box -->
+                            <div class="p-2 mb-3 rounded bg-light border text-center" style="font-size: 0.86rem;">
+                                <span>ระบบส่งรหัส OTP ไปยัง: <strong id="forgotMaskedEmailText" class="text-dark"></strong></span>
+                                <div id="forgotDemoOtpBox" class="mt-1 d-none">
+                                    <span class="badge bg-warning text-dark border px-2 py-1">โหมดทดสอบ OTP: <strong id="forgotDemoOtpCode"></strong></span>
+                                </div>
+                            </div>
+
+                            <!-- OTP Input -->
+                            <div class="farm-form-group">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="farm-label mb-0">รหัส OTP 6 หลัก <span class="required-asterisk">*</span></label>
+                                    <button type="button" class="btn btn-link p-0 text-decoration-none small text-muted" id="btnForgotResendOtp" onclick="handleForgotSendOtp()" style="font-size: 0.78rem;">
+                                        ขอรหัสใหม่
+                                    </button>
+                                </div>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="farm-input form-control text-center font-monospace fw-bold" 
+                                           id="forgot_otp" 
+                                           placeholder="XXXXXX" 
+                                           maxlength="6" 
+                                           inputmode="numeric"
+                                           style="letter-spacing: 4px; font-size: 1.15rem; border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                    <button type="button" class="btn btn-outline-dark" id="btnForgotVerifyOtp" onclick="handleForgotVerifyOtp()" style="font-size: 0.85rem; font-weight: 600; border-top-right-radius: 10px; border-bottom-right-radius: 10px;">
+                                        ✔ ยืนยัน OTP
+                                    </button>
+                                </div>
+                                <div id="forgotOtpStatusText" class="mt-1 small text-muted" style="font-size: 0.8rem;">
+                                    ⏱️ รหัสมีอายุ 5 นาที (ห้ามแจ้งรหัสนี้แก่ผู้อื่น)
+                                </div>
+                            </div>
+
+                            <!-- Step 3: New Password Form (Displayed when OTP is verified) -->
+                            <form action="{{ url_for('forgot_password_reset') }}" method="POST" id="forgotResetForm" style="display: none;">
+                                <div class="border-top pt-3 mt-2">
+                                    <div class="fw-bold mb-2" style="color: var(--farm-olive-deep); font-size: 0.92rem;">
+                                        🔒 กำหนดรหัสผ่านใหม่:
+                                    </div>
+
+                                    <div class="farm-form-group">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="farm-label mb-0">รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร) <span class="required-asterisk">*</span></label>
+                                            <span id="forgotPwdCount" class="badge bg-secondary" style="font-size: 0.75rem;">0 / 8 ตัว</span>
+                                        </div>
+                                        <div class="input-group">
+                                            <input type="password" 
+                                                   class="farm-input form-control" 
+                                                   name="new_password" 
+                                                   id="forgot_new_password" 
+                                                   placeholder="กรอกรหัสผ่านใหม่อย่างน้อย 8 ตัวอักษร" 
+                                                   minlength="8" 
+                                                   required 
+                                                   oninput="updateCharCount('forgot_new_password', 'forgotPwdCount', 8)"
+                                                   style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                            <button type="button" class="btn btn-outline-secondary toggle-password-btn" onclick="togglePasswordVisibility('forgot_new_password', this)" title="เปิด/ปิดการมองเห็นรหัสผ่าน" tabindex="-1">
+                                                <span class="eye-icon">👁️</span>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted" style="font-size: 0.76rem;">* รหัสผ่านต้องมีอักษรภาษาอังกฤษ, ตัวเลข, และอักขระพิเศษ (เช่น !@#$%)</small>
+                                    </div>
+
+                                    <div class="farm-form-group">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="farm-label mb-0">ยืนยันรหัสผ่านใหม่อีกครั้ง <span class="required-asterisk">*</span></label>
+                                        </div>
+                                        <div class="input-group">
+                                            <input type="password" 
+                                                   class="farm-input form-control" 
+                                                   name="confirm_password" 
+                                                   id="forgot_confirm_password" 
+                                                   placeholder="กรอกรหัสผ่านใหม่อีกครั้งให้ตรงกัน" 
+                                                   minlength="8" 
+                                                   required 
+                                                   style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                            <button type="button" class="btn btn-outline-secondary toggle-password-btn" onclick="togglePasswordVisibility('forgot_confirm_password', this)" title="เปิด/ปิดการมองเห็นรหัสผ่าน" tabindex="-1">
+                                                <span class="eye-icon">👁️</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="farm-btn-submit mt-2" id="btnForgotSavePassword">
+                                        💾 บันทึกรหัสผ่านใหม่ และเข้าสู่ระบบ
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div class="text-center mt-3">
+                                <button type="button" onclick="resetForgotFlow()" class="btn btn-link p-0 text-muted small text-decoration-none" style="font-size: 0.8rem;">
+                                    🔄 เปลี่ยนอีเมล/เลขบัตรประชาชน
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -860,5 +998,211 @@ function fillCreds(uId, uVal, pId, pVal, badgeId) {
         updateCharCount(pId, badgeId, 8);
     }
 }
+
+// ==============================================================
+// 9. ระบบลืมรหัสผ่าน (Forgot Password Controller)
+// ==============================================================
+function switchToForgotTab() {
+    const tabEl = document.getElementById('forgot-tab');
+    if (tabEl) {
+        const tab = bootstrap.Tab.getOrCreateInstance(tabEl);
+        tab.show();
+        const loginId = document.getElementById('login_identifier');
+        const forgotId = document.getElementById('forgot_identifier');
+        if (loginId && forgotId && loginId.value.trim() && !forgotId.value.trim()) {
+            forgotId.value = loginId.value.trim();
+        }
+        if (forgotId) forgotId.focus();
+    }
+}
+
+function switchToLoginTab() {
+    const tabEl = document.getElementById('login-tab');
+    if (tabEl) {
+        const tab = bootstrap.Tab.getOrCreateInstance(tabEl);
+        tab.show();
+    }
+}
+
+function showForgotAlert(type, message) {
+    const alertBox = document.getElementById('forgotAlertBox');
+    if (!alertBox) return;
+    alertBox.className = `alert alert-${type} py-2 px-3 mb-3`;
+    alertBox.innerHTML = message;
+    alertBox.classList.remove('d-none');
+}
+
+function hideForgotAlert() {
+    const alertBox = document.getElementById('forgotAlertBox');
+    if (alertBox) alertBox.classList.add('d-none');
+}
+
+function resetForgotFlow() {
+    hideForgotAlert();
+    document.getElementById('forgotStep1').style.display = 'block';
+    document.getElementById('forgotStep2').style.display = 'none';
+    document.getElementById('forgotResetForm').style.display = 'none';
+    const otpInput = document.getElementById('forgot_otp');
+    if (otpInput) {
+        otpInput.value = '';
+        otpInput.disabled = false;
+    }
+    const btnVerify = document.getElementById('btnForgotVerifyOtp');
+    if (btnVerify) {
+        btnVerify.disabled = false;
+        btnVerify.className = 'btn btn-outline-dark';
+        btnVerify.innerHTML = '✔ ยืนยัน OTP';
+    }
+    const p1 = document.getElementById('forgot_new_password');
+    const p2 = document.getElementById('forgot_confirm_password');
+    if (p1) p1.value = '';
+    if (p2) p2.value = '';
+    const pwdCount = document.getElementById('forgotPwdCount');
+    if (pwdCount) pwdCount.innerText = '0 / 8 ตัว';
+}
+
+function handleForgotSendOtp() {
+    hideForgotAlert();
+    const identInput = document.getElementById('forgot_identifier');
+    const ident = identInput ? identInput.value.trim() : '';
+    if (!ident) {
+        showForgotAlert('warning', '⚠️ กรุณาระบุอีเมล หรือเลขประจำตัวประชาชน 13 หลัก');
+        if (identInput) identInput.focus();
+        return;
+    }
+
+    const btn = document.getElementById('btnForgotSendOtp');
+    const origText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ กำลังค้นหาบัญชีและส่งรหัส OTP...';
+    }
+
+    fetch('/api/forgot-password/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: ident })
+    })
+    .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
+    .then(({ ok, data }) => {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+        }
+        if (!ok || !data.success) {
+            showForgotAlert('danger', `❌ ${data.message || 'เกิดข้อผิดพลาดในการส่ง OTP'}`);
+            return;
+        }
+
+        // สำเร็จ: ไปยังขั้นตอนที่ 2
+        document.getElementById('forgotStep1').style.display = 'none';
+        document.getElementById('forgotStep2').style.display = 'block';
+        document.getElementById('forgotMaskedEmailText').innerText = data.masked_email || ident;
+
+        const demoBox = document.getElementById('forgotDemoOtpBox');
+        if (data.mode === 'simulated' && data.demo_otp) {
+            document.getElementById('forgotDemoOtpCode').innerText = data.demo_otp;
+            demoBox.classList.remove('d-none');
+            const otpInput = document.getElementById('forgot_otp');
+            if (otpInput) otpInput.value = data.demo_otp;
+        } else {
+            demoBox.classList.add('d-none');
+        }
+
+        showForgotAlert('success', `✅ ${data.message}`);
+        const otpInput = document.getElementById('forgot_otp');
+        if (otpInput) otpInput.focus();
+    })
+    .catch(err => {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+        }
+        showForgotAlert('danger', '❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
+    });
+}
+
+function handleForgotVerifyOtp() {
+    hideForgotAlert();
+    const otpInput = document.getElementById('forgot_otp');
+    const otp = otpInput ? otpInput.value.trim() : '';
+    if (!otp || otp.length !== 6) {
+        showForgotAlert('warning', '⚠️ กรุณากรอกรหัส OTP 6 หลักให้ครบถ้วน');
+        if (otpInput) otpInput.focus();
+        return;
+    }
+
+    const btn = document.getElementById('btnForgotVerifyOtp');
+    const origText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ ตรวจสอบ...';
+    }
+
+    fetch('/api/forgot-password/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp: otp })
+    })
+    .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
+    .then(({ ok, data }) => {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+        }
+        if (!ok || !data.success) {
+            showForgotAlert('danger', `❌ ${data.message || 'รหัส OTP ไม่ถูกต้อง'}`);
+            return;
+        }
+
+        // ยืนยัน OTP สำเร็จ: ล็อคช่อง OTP และเปิดฟอร์มตั้งรหัสผ่านใหม่
+        if (otpInput) otpInput.disabled = true;
+        if (btn) {
+            btn.disabled = true;
+            btn.className = 'btn btn-success';
+            btn.innerHTML = '✔ ยืนยันแล้ว';
+        }
+        document.getElementById('forgotResetForm').style.display = 'block';
+        showForgotAlert('success', '✅ ยืนยันตัวตนสำเร็จแล้ว! กรุณากำหนดรหัสผ่านใหม่ด้านล่าง');
+        const newPwd = document.getElementById('forgot_new_password');
+        if (newPwd) newPwd.focus();
+    })
+    .catch(err => {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+        }
+        showForgotAlert('danger', '❌ ไม่สามารถตรวจสอบ OTP ได้ กรุณาลองใหม่อีกครั้ง');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const forgotResetForm = document.getElementById('forgotResetForm');
+    if (forgotResetForm) {
+        forgotResetForm.addEventListener('submit', function(e) {
+            const p1 = document.getElementById('forgot_new_password').value;
+            const p2 = document.getElementById('forgot_confirm_password').value;
+
+            if (p1.length < 8) {
+                e.preventDefault();
+                alert('⚠️ รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+                document.getElementById('forgot_new_password').focus();
+                return false;
+            }
+            if (!/[a-zA-Z]/.test(p1) || !/[0-9]/.test(p1) || !/[^a-zA-Z0-9]/.test(p1)) {
+                e.preventDefault();
+                alert('⚠️ รหัสผ่านใหม่ต้องประกอบด้วยตัวอักษรภาษาอังกฤษ, ตัวเลข, และอักขระพิเศษ (เช่น !@#$%)');
+                document.getElementById('forgot_new_password').focus();
+                return false;
+            }
+            if (p1 !== p2) {
+                e.preventDefault();
+                alert('⚠️ รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
+                document.getElementById('forgot_confirm_password').focus();
+                return false;
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

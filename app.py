@@ -348,7 +348,29 @@ def get_all_users():
                 'citizen_id': u_cid
             })
 
+    # ซิงค์รหัสผ่านที่เคยมีการอัปเดตใหม่ (Runtime Cache)
+    for u in users:
+        uid = u.get('id')
+        if uid and uid in UPDATED_USER_PASSWORDS:
+            u['password'] = UPDATED_USER_PASSWORDS[uid]
+
     return users
+
+UPDATED_USER_PASSWORDS = {}
+
+def mask_email(email_str):
+    """ปกปิดอีเมลบางส่วนเพื่อความปลอดภัย เช่น s***i@farm.go.th"""
+    if not email_str or '@' not in str(email_str):
+        return str(email_str) if email_str else ''
+    s = str(email_str).strip()
+    parts = s.split('@', 1)
+    name_p = parts[0]
+    domain_p = parts[1]
+    if len(name_p) <= 2:
+        masked_n = name_p[0] + '***'
+    else:
+        masked_n = name_p[0] + '***' + name_p[-1]
+    return f"{masked_n}@{domain_p}"
 
 def find_user_by_identifier(identifier):
     """ค้นหาข้อมูลผู้ใช้ด้วย อีเมล, เลขประจำตัวประชาชน (13 หลัก), รหัสเกษตร หรือชื่อผู้ใช้"""
@@ -357,68 +379,122 @@ def find_user_by_identifier(identifier):
     ident = str(identifier).strip().lower()
     clean_digits = re.sub(r'\D', '', ident)
     users = get_all_users()
+    found_user = None
 
     for u in users:
         # 1. ตรวจสอบกับอีเมล (case-insensitive)
         if u.get('email') and u['email'].strip().lower() == ident:
-            return u
+            found_user = dict(u); break
         # 2. ตรวจสอบกับเลขประจำตัวประชาชน (รองรับทั้งแบบมีขีดและไม่มีขีด)
         if clean_digits and len(clean_digits) == 13 and u.get('citizen_id') and re.sub(r'\D', '', str(u['citizen_id'])) == clean_digits:
-            return u
+            found_user = dict(u); break
         # 3. ตรวจสอบกับรหัสเกษตร / username
         if u.get('username') and u['username'].strip().lower() == ident:
-            return u
+            found_user = dict(u); break
         if u.get('farmer_id') and str(u['farmer_id']).strip().lower() == ident:
-            return u
+            found_user = dict(u); break
         # 4. รองรับ alias รหัสผู้ใช้ เช่น u001, u002, u003, user01, user02
         if ident == u['id'].strip().lower():
-            return u
+            found_user = dict(u); break
         if ident == 'user01' and u['id'] == 'U001':
-            return u
+            found_user = dict(u); break
         if ident == 'user02' and u['id'] == 'U002':
-            return u
+            found_user = dict(u); break
         if ident == 'admin' and (u['id'] == 'U003' or u['role'] in ['ผู้อนุมัติ', 'admin']):
-            return u
+            found_user = dict(u); break
 
-    # Guaranteed Fallback เฉพาะสำหรับบัญชีตัวอย่าง (กรณีฐานข้อมูลภายนอกยังซิงค์ไม่เสร็จ)
-    if ident in ['somchai@farm.go.th', 'user01', '100123456789'] or clean_digits == '1100100111111':
-        return {
-            'id': 'U001',
-            'full_name': 'นายสมชาย ใจดี',
-            'username': '100123456789',
-            'farmer_id': '100123456789',
-            'password': 'User@123',
-            'role': 'ผู้ใช้',
-            'email': 'somchai@farm.go.th',
-            'citizen_id': '1100100111111'
-        }
-    if ident in ['somsri@farm.go.th', 'user02', '200123456789'] or clean_digits == '3100500123458':
-        return {
-            'id': 'U002',
-            'full_name': 'นางสมศรี สดใส',
-            'username': '200123456789',
-            'farmer_id': '200123456789',
-            'password': 'Farm#123',
-            'role': 'ผู้ใช้',
-            'email': 'somsri@farm.go.th',
-            'citizen_id': '3100500123458'
-        }
-    if ident in ['admin@agricar.com', 'admin', 'u003']:
-        return {
-            'id': 'U003',
-            'full_name': 'ผู้ดูแลระบบ (Admin)',
-            'username': 'admin',
-            'farmer_id': 'admin',
-            'password': 'Admin@123',
-            'role': 'ผู้อนุมัติ',
-            'email': 'admin@agricar.com',
-            'citizen_id': ''
-        }
-    return None
+    if not found_user:
+        # Guaranteed Fallback เฉพาะสำหรับบัญชีตัวอย่าง (กรณีฐานข้อมูลภายนอกยังซิงค์ไม่เสร็จ)
+        if ident in ['somchai@farm.go.th', 'user01', '100123456789'] or clean_digits == '1100100111111':
+            found_user = {
+                'id': 'U001',
+                'full_name': 'นายสมชาย ใจดี',
+                'username': '100123456789',
+                'farmer_id': '100123456789',
+                'password': 'User@123',
+                'role': 'ผู้ใช้',
+                'email': 'somchai@farm.go.th',
+                'citizen_id': '1100100111111'
+            }
+        elif ident in ['somsri@farm.go.th', 'user02', '200123456789'] or clean_digits == '3100500123458':
+            found_user = {
+                'id': 'U002',
+                'full_name': 'นางสมศรี สดใส',
+                'username': '200123456789',
+                'farmer_id': '200123456789',
+                'password': 'Farm#123',
+                'role': 'ผู้ใช้',
+                'email': 'somsri@farm.go.th',
+                'citizen_id': '3100500123458'
+            }
+        elif ident in ['admin@agricar.com', 'admin', 'u003']:
+            found_user = {
+                'id': 'U003',
+                'full_name': 'ผู้ดูแลระบบ (Admin)',
+                'username': 'admin',
+                'farmer_id': 'admin',
+                'password': 'Admin@123',
+                'role': 'ผู้อนุมัติ',
+                'email': 'admin@agricar.com',
+                'citizen_id': ''
+            }
+
+    if found_user:
+        uid = found_user.get('id')
+        if uid in UPDATED_USER_PASSWORDS:
+            found_user['password'] = UPDATED_USER_PASSWORDS[uid]
+
+    return found_user
 
 def find_user_by_username(username):
     """ค้นหาข้อมูลผู้ใช้ด้วย username หรือ identifier"""
     return find_user_by_identifier(username)
+
+def update_user_password(identifier_or_user_id, new_password):
+    """
+    อัปเดตรหัสผ่านใหม่ของผู้ใช้ (ลืมรหัสผ่าน / เปลี่ยนรหัสผ่าน)
+    อัปเดตลงทั้ง Google Sheets, Local Excel (CarBooking.xlsx) และ In-Memory Cache
+    คืนค่า: (success: bool, message: str)
+    """
+    user = find_user_by_identifier(identifier_or_user_id)
+    if not user:
+        return False, "ไม่พบข้อมูลผู้ใช้ในระบบ"
+    
+    uid = user['id']
+    clean_pwd = str(new_password).strip()
+
+    # 1. Update in Google Sheets
+    if use_google_sheets and ws_users:
+        try:
+            rows = ws_users.get_all_values()
+            for idx, r in enumerate(rows, start=1):
+                if r and len(r) > 0 and r[0].strip() == uid:
+                    ws_users.update_cell(idx, 4, clean_pwd)  # Column D (4) is password
+                    break
+        except Exception as e:
+            print(f"Error updating user password in Google Sheets: {e}")
+
+    # 2. Update in Local Excel
+    if os.path.exists(EXCEL_FILE):
+        try:
+            wb = openpyxl.load_workbook(EXCEL_FILE)
+            if 'Users' in wb.sheetnames:
+                ws_u = wb['Users']
+                for row in ws_u.iter_rows(min_row=2):
+                    if row and row[0].value and str(row[0].value).strip() == uid:
+                        row[3].value = clean_pwd  # Column D (index 3) is password
+                        break
+                wb.save(EXCEL_FILE)
+        except Exception as e:
+            print(f"Error updating user password in Excel: {e}")
+
+    # 3. Store in In-Memory Cache for immediate effect
+    UPDATED_USER_PASSWORDS[uid] = clean_pwd
+    user['password'] = clean_pwd
+
+    # 4. Log Action
+    log_action('ตั้งรหัสผ่านใหม่', f"ผู้ใช้ {uid} ({user['full_name']})", user['full_name'])
+    return True, "ตั้งรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว"
 
 def add_new_user(full_name, email, password, role='ผู้ใช้', citizen_id='', farmer_id=''):
     """เพิ่มผู้ใช้ใหม่ลงในฐานข้อมูลทั้ง Google Sheets และ Local Excel พร้อมอีเมลและเลขบัตรประชาชน"""
@@ -553,7 +629,7 @@ def mask_user_last_name(full_name: str) -> str:
         return f"{clean[:3]}***"
     return f"{clean}***"
 
-def send_otp_email(recipient_email, otp_code):
+def send_otp_email(recipient_email, otp_code, purpose="ยืนยันตัวตนสำหรับการลงทะเบียน"):
     """
     ส่งรหัส OTP 6 หลักไปยังอีเมลของผู้ใช้งาน
     - หากมีตัวแปรสภาพแวดล้อม SMTP (SMTP_SERVER, SMTP_USER, SMTP_PASSWORD) จะส่งอีเมลจริงผ่าน SMTP TLS
@@ -566,10 +642,12 @@ def send_otp_email(recipient_email, otp_code):
     smtp_password = os.environ.get('SMTP_PASSWORD')
     sender_email = os.environ.get('SMTP_FROM', smtp_user or 'noreply@agricarbook.com')
     
+    subject_title = "ตั้งรหัสผ่านใหม่" if ("รหัสผ่าน" in purpose or "forgot" in str(purpose).lower()) else "ยืนยันตัวตน"
+
     if smtp_server and smtp_user and smtp_password:
         try:
             msg = MIMEMultipart('alternative')
-            msg['Subject'] = f"🌾 [Agricarbook] รหัส OTP ยืนยันตัวตนของคุณคือ {otp_code}"
+            msg['Subject'] = f"🌾 [Agricarbook] รหัส OTP {subject_title}ของคุณคือ {otp_code}"
             msg['From'] = f"Agricarbook <{sender_email}>"
             msg['To'] = recipient_email
             
@@ -580,13 +658,13 @@ def send_otp_email(recipient_email, otp_code):
                     <p style="color: #666; font-size: 14px; margin-top: 5px;">ระบบจองยานพาหนะและเครื่องจักรกลการเกษตร</p>
                 </div>
                 <div style="background-color: #FAD1D9; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 20px;">
-                    <p style="color: #444; font-size: 15px; margin: 0 0 12px 0;">รหัสยืนยันตัวตนสำหรับการลงทะเบียน (OTP) ของคุณคือ:</p>
+                    <p style="color: #444; font-size: 15px; margin: 0 0 12px 0;">รหัสยืนยันตัวตนสำหรับ{purpose} (OTP) ของคุณคือ:</p>
                     <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #2d3748; background: #ffffff; padding: 12px 24px; border-radius: 10px; display: inline-block; border: 2px dashed #868F5A;">
                         {otp_code}
                     </div>
                     <p style="color: #718096; font-size: 13px; margin: 12px 0 0 0;">⏱️ รหัสนี้มีอายุการใช้งาน 5 นาที (ห้ามแจ้งรหัสนี้แก่ผู้อื่น)</p>
                 </div>
-                <p style="color: #a0aec0; font-size: 12px; text-align: center; margin: 0;">หากคุณไม่ได้ร้องขอการลงทะเบียนนี้ สามารถละเว้นอีเมลฉบับนี้ได้ทันที</p>
+                <p style="color: #a0aec0; font-size: 12px; text-align: center; margin: 0;">หากคุณไม่ได้ร้องขอดำเนินการนี้ สามารถละเว้นอีเมลฉบับนี้ได้ทันที</p>
             </div>
             """
             msg.attach(MIMEText(html_body, 'html', 'utf-8'))
@@ -603,7 +681,7 @@ def send_otp_email(recipient_email, otp_code):
             return True, f"จำลองการส่ง OTP สำเร็จ (OTP: {otp_code})", "simulated"
     else:
         # Development / Simulation mode
-        print(f"[OTP Simulation] รหัส OTP สำหรับอีเมล {recipient_email} คือ: {otp_code}")
+        print(f"[OTP Simulation] รหัส OTP สำหรับอีเมล {recipient_email} ({purpose}) คือ: {otp_code}")
         return True, f"ส่งรหัส OTP ไปยัง {recipient_email} เรียบร้อยแล้ว (โหมดจำลองระบบ)", "simulated"
 
 def send_booking_status_email(recipient_email, user_name, booking_id, vehicle, start_date, start_time, end_date, end_time, status, reason='-'):
@@ -1002,11 +1080,11 @@ def login():
             # รหัสผ่านตรงกับในฐานข้อมูล
             if user['password'] in [password, pwd_clean]:
                 is_user_match = True
-            # รหัสผ่านมาตรฐานสำหรับบัญชีตัวอย่าง U001 (นายสมชาย)
-            elif user['id'] == 'U001' and (password in ['User@123', 'UserPass1234', '12345678'] or pwd_clean in ['User@123', 'UserPass1234', '12345678']):
+            # รหัสผ่านมาตรฐานสำหรับบัญชีตัวอย่าง U001 (นายสมชาย) หากยังไม่ได้ตั้งรหัสใหม่
+            elif user['id'] == 'U001' and user['id'] not in UPDATED_USER_PASSWORDS and (password in ['User@123', 'UserPass1234', '12345678'] or pwd_clean in ['User@123', 'UserPass1234', '12345678']):
                 is_user_match = True
-            # รหัสผ่านมาตรฐานสำหรับบัญชีตัวอย่าง U002 (นางสมศรี)
-            elif user['id'] == 'U002' and (password in ['Farm#123', 'UserPass5678', '12345678'] or pwd_clean in ['Farm#123', 'UserPass5678', '12345678']):
+            # รหัสผ่านมาตรฐานสำหรับบัญชีตัวอย่าง U002 (นางสมศรี) หากยังไม่ได้ตั้งรหัสใหม่
+            elif user['id'] == 'U002' and user['id'] not in UPDATED_USER_PASSWORDS and (password in ['Farm#123', 'UserPass5678', '12345678'] or pwd_clean in ['Farm#123', 'UserPass5678', '12345678']):
                 is_user_match = True
 
         if is_user_match:
@@ -1174,6 +1252,130 @@ def api_verify_otp():
         'success': True,
         'message': 'ยืนยันรหัส OTP ทางอีเมลสำเร็จเรียบร้อยแล้ว'
     })
+
+# --------------------------------------------------------------
+# --- ระบบลืมรหัสผ่าน (Forgot Password Flow) ---
+# --------------------------------------------------------------
+@app.route('/forgot-password')
+def forgot_password_page():
+    """เปิดหน้าตั้งรหัสผ่านใหม่ (ลืมรหัสผ่าน)"""
+    return redirect(url_for('login', tab='forgot'))
+
+@app.route('/api/forgot-password/send-otp', methods=['POST'])
+def api_forgot_password_send_otp():
+    """API สำหรับขอและส่งรหัส OTP 6 หลักเพื่อตั้งรหัสผ่านใหม่"""
+    data = request.get_json(silent=True) or request.form
+    identifier = (data.get('identifier') or data.get('email') or '').strip()
+
+    if not identifier:
+        return jsonify({'success': False, 'message': 'กรุณาระบุอีเมล หรือเลขประจำตัวประชาชน 13 หลัก'}), 400
+
+    user = find_user_by_identifier(identifier)
+    if not user:
+        return jsonify({'success': False, 'message': f'ไม่พบบัญชีผู้ใช้ที่ตรงกับข้อมูล "{identifier}" ในระบบ กรุณาตรวจสอบอีกครั้ง'}), 404
+
+    user_email = user.get('email', '').strip().lower()
+    if not user_email or '@' not in user_email or '.' not in user_email:
+        return jsonify({'success': False, 'message': 'บัญชีนี้ยังไม่ได้ลงทะเบียนอีเมลในระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน'}), 400
+
+    # สุ่มรหัส OTP 6 หลัก
+    otp_code = f"{random.randint(100000, 999999)}"
+
+    # บันทึกลง Session สำหรับขั้นตอนลืมรหัสผ่าน
+    session['forgot_otp'] = otp_code
+    session['forgot_user_id'] = user['id']
+    session['forgot_email'] = user_email
+    session['forgot_user_name'] = user['full_name']
+    session['forgot_otp_expires'] = time.time() + 300  # 5 นาที
+    session['forgot_otp_verified'] = False
+    session.modified = True
+
+    success, msg, mode = send_otp_email(user_email, otp_code, purpose="ตั้งรหัสผ่านใหม่ (ลืมรหัสผ่าน)")
+
+    resp_data = {
+        'success': success,
+        'message': f"ส่งรหัส OTP ไปยัง {mask_email(user_email)} เรียบร้อยแล้ว (มีอายุ 5 นาที)",
+        'masked_email': mask_email(user_email),
+        'user_name': user['full_name'],
+        'mode': mode,
+        'expires_in': 300
+    }
+    if mode == 'simulated':
+        resp_data['demo_otp'] = otp_code
+
+    return jsonify(resp_data)
+
+@app.route('/api/forgot-password/verify-otp', methods=['POST'])
+def api_forgot_password_verify_otp():
+    """API ตรวจสอบรหัส OTP สำหรับขั้นตอนตั้งรหัสผ่านใหม่"""
+    data = request.get_json(silent=True) or request.form
+    otp = (data.get('otp') or '').strip()
+
+    if not otp:
+        return jsonify({'success': False, 'message': 'กรุณาระบุรหัส OTP 6 หลัก'}), 400
+
+    saved_otp = session.get('forgot_otp')
+    expires_at = session.get('forgot_otp_expires', 0)
+    user_id = session.get('forgot_user_id')
+
+    if not saved_otp or not user_id:
+        return jsonify({'success': False, 'message': 'ยังไม่มีการขอรหัส OTP หรือเซสชันหมดอายุ กรุณากดขอรหัส OTP ใหม่'}), 400
+
+    if time.time() > expires_at:
+        return jsonify({'success': False, 'message': 'รหัส OTP หมดอายุแล้ว (อายุ 5 นาที) กรุณากดขอรหัส OTP ใหม่'}), 400
+
+    if otp != saved_otp:
+        return jsonify({'success': False, 'message': 'รหัส OTP ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง'}), 400
+
+    # ยืนยันสำเร็จ อนุญาตให้เข้าสู่ขั้นตอนตั้งรหัสผ่านใหม่
+    session['forgot_otp_verified'] = True
+    session.modified = True
+
+    return jsonify({
+        'success': True,
+        'message': 'ยืนยันรหัส OTP ถูกต้อง ท่านสามารถตั้งรหัสผ่านใหม่ได้ทันที'
+    })
+
+@app.route('/forgot-password/reset', methods=['POST'])
+def forgot_password_reset():
+    """บันทึกรหัสผ่านใหม่หลังจากยืนยัน OTP สำเร็จ"""
+    is_verified = session.get('forgot_otp_verified')
+    user_id = session.get('forgot_user_id')
+
+    if not is_verified or not user_id:
+        flash('กรุณายืนยันรหัส OTP ก่อนทำการตั้งรหัสผ่านใหม่', 'warning')
+        return redirect(url_for('login', tab='forgot'))
+
+    new_password = request.form.get('new_password', '')
+    confirm_password = request.form.get('confirm_password', '')
+
+    # 1. ตรวจสอบความปลอดภัยของรหัสผ่านใหม่ (8 ตัวอักษรขึ้นไป)
+    pwd_valid, pwd_msg = validate_password_complexity(new_password)
+    if not pwd_valid:
+        flash(f'ข้อผิดพลาดรหัสผ่านใหม่: {pwd_msg}', 'danger')
+        return redirect(url_for('login', tab='forgot'))
+
+    if new_password != confirm_password:
+        flash('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน', 'danger')
+        return redirect(url_for('login', tab='forgot'))
+
+    # 2. ดำเนินการอัปเดตรหัสผ่านลงในระบบ
+    success, msg = update_user_password(user_id, new_password)
+    if not success:
+        flash(f'เกิดข้อผิดพลาดในการบันทึกรหัสผ่าน: {msg}', 'danger')
+        return redirect(url_for('login', tab='forgot'))
+
+    # 3. ล้างเซสชันสำหรับขั้นตอนลืมรหัสผ่าน
+    session.pop('forgot_otp', None)
+    session.pop('forgot_user_id', None)
+    session.pop('forgot_email', None)
+    session.pop('forgot_user_name', None)
+    session.pop('forgot_otp_expires', None)
+    session.pop('forgot_otp_verified', None)
+
+    flash('ตั้งรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว! กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่ของคุณ', 'success')
+    return redirect(url_for('login', tab='login'))
+
 
 @app.route('/api/notifications')
 def api_get_notifications():
@@ -1381,9 +1583,9 @@ def get_user_bookings(user_name_or_id_or_email):
         if b_user in user_identifiers:
             b_copy = dict(b)
             e_count = edit_counts.get(b['id'], 0)
-            b_copy['edit_count'] = e_count
-            b_copy['can_edit'] = (b['status'] in ['รออนุมัติ', 'อนุมัติ'] and b['end_date'] >= today_str and e_count < MAX_EDITS_PER_BOOKING)
-            b_copy['can_cancel'] = (b['status'] in ['รออนุมัติ', 'อนุมัติ'] and b['end_date'] >= today_str)
+            # รถที่อนุมัติการจองแล้วไม่สามารถยกเลิกหรือแก้ไขได้ (ต้องอยู่ในสถานะ 'รออนุมัติ' เท่านั้น)
+            b_copy['can_edit'] = (b['status'] == 'รออนุมัติ' and b['end_date'] >= today_str and e_count < MAX_EDITS_PER_BOOKING)
+            b_copy['can_cancel'] = (b['status'] == 'รออนุมัติ' and b['end_date'] >= today_str)
             b_copy['is_past'] = (b['end_date'] < today_str)
             my_b.append(b_copy)
 
@@ -1510,8 +1712,15 @@ def user_request():
                         )
                         return redirect(url_for('user_request'))
 
-        # คำนวณ Booking ID จากจำนวนแถว
-        booking_id = f"BK{len(all_bookings) + 1:03d}"
+        # คำนวณ Booking ID จากรหัสสูงสุดที่มีอยู่ เพื่อป้องกันรหัสซ้ำ
+        max_b_num = 0
+        for b in all_bookings:
+            bid = b.get('id', '')
+            if str(bid).startswith('BK'):
+                num_part = re.sub(r'\D', '', str(bid))
+                if num_part.isdigit():
+                    max_b_num = max(max_b_num, int(num_part))
+        booking_id = f"BK{max(max_b_num + 1, len(all_bookings) + 1):03d}"
         new_row = [
             booking_id, start_date, start_time, end_date, end_time,
             vehicle, user_name, location, purpose, note, 'รออนุมัติ'
@@ -1600,8 +1809,11 @@ def cancel_user_booking(booking_id):
         flash('ข้อผิดพลาดด้านความปลอดภัย: คุณไม่มีสิทธิ์ยกเลิกรายการจองของผู้อื่น', 'danger')
         return redirect(url_for('user_request'))
 
-    # 3. ตรวจสอบสถานะ (ต้องเป็น รออนุมัติ หรือ อนุมัติ เท่านั้น)
-    if target_booking['status'] not in ['รออนุมัติ', 'อนุมัติ']:
+    # 3. ตรวจสอบสถานะ: รถที่อนุมัติการจองแล้วไม่สามารถยกเลิกได้ (ต้องเป็น รออนุมัติ เท่านั้น)
+    if target_booking['status'] == 'อนุมัติ':
+        flash(f'ไม่สามารถยกเลิกได้: คำสั่งจอง {booking_id} ({target_booking["vehicle"]}) ได้รับการอนุมัติการจองแล้ว จึงไม่สามารถยกเลิกได้ หากมีความจำเป็นเร่งด่วนกรุณาติดต่อผู้ดูแลระบบ', 'danger')
+        return redirect(url_for('user_request'))
+    if target_booking['status'] != 'รออนุมัติ':
         flash(f'คำสั่งจอง {booking_id} อยู่ในสถานะ "{target_booking["status"]}" ไม่สามารถยกเลิกได้', 'warning')
         return redirect(url_for('user_request'))
 
@@ -1688,8 +1900,11 @@ def edit_user_booking(booking_id):
         flash('ข้อผิดพลาดด้านความปลอดภัย: คุณไม่มีสิทธิ์แก้ไขรายการจองของผู้อื่น', 'danger')
         return redirect(url_for('user_request'))
 
-    # 3. ตรวจสอบสถานะ (ต้องเป็น รออนุมัติ หรือ อนุมัติ เท่านั้น)
-    if target_booking['status'] not in ['รออนุมัติ', 'อนุมัติ']:
+    # 3. ตรวจสอบสถานะ: รถที่อนุมัติการจองแล้วไม่สามารถแก้ไขได้ (ต้องเป็น รออนุมัติ เท่านั้น)
+    if target_booking['status'] == 'อนุมัติ':
+        flash(f'ไม่สามารถแก้ไขได้: คำสั่งจอง {booking_id} ({target_booking["vehicle"]}) ได้รับการอนุมัติการจองแล้ว จึงไม่สามารถแก้ไขได้ หากมีความจำเป็นเร่งด่วนกรุณาติดต่อผู้ดูแลระบบ', 'danger')
+        return redirect(url_for('user_request'))
+    if target_booking['status'] != 'รออนุมัติ':
         flash(f'คำสั่งจอง {booking_id} อยู่ในสถานะ "{target_booking["status"]}" ไม่สามารถแก้ไขได้', 'warning')
         return redirect(url_for('user_request'))
 
