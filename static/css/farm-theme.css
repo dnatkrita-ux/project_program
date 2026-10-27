@@ -221,13 +221,25 @@ body {
 
 /* --- Main Layout Container --- */
 .farm-main-content {
-    flex: 1;
+    flex: 1 0 auto;
     position: relative;
-    z-index: 10;
-    padding: 24px 16px 80px 16px;
-    max-width: 1080px;
+    padding: 24px 20px 48px 20px;
+    max-width: 1240px;
     width: 100%;
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.farm-main-content > .row {
+    width: 100%;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    justify-content: center;
 }
 
 /* --- Flash Alerts --- */
@@ -242,6 +254,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
+    max-width: 1100px;
+    box-sizing: border-box;
 }
 
 .farm-alert-success {
@@ -275,9 +290,11 @@ body {
     border-radius: var(--farm-card-radius);
     box-shadow: 0 8px 25px rgba(134, 143, 90, 0.1);
     overflow: hidden;
-    max-width: 600px;
-    margin: 0 auto 32px auto;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto 28px auto;
     position: relative;
+    box-sizing: border-box;
 }
 
 .farm-card-header {
@@ -443,7 +460,9 @@ input[type="time"].farm-input {
     border-radius: var(--farm-card-radius);
     box-shadow: 0 8px 24px rgba(134, 143, 90, 0.1);
     overflow: hidden;
-    margin-bottom: 28px;
+    width: 100%;
+    margin: 0 auto 28px auto;
+    box-sizing: border-box;
 }
 
 .farm-card-header-clipboard {
@@ -461,17 +480,21 @@ input[type="time"].farm-input {
 /* Zebra Striped Table */
 .farm-zebra-table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 0.95rem;
+    min-width: 880px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.92rem;
 }
 
 .farm-zebra-table thead th {
-    background-color: #ffffff;
+    background-color: #fafbf7;
     color: var(--farm-olive-deep);
     font-weight: 700;
-    padding: 12px 16px;
+    padding: 13px 14px;
     border-bottom: 2px solid var(--farm-rose-border);
     text-align: center;
+    white-space: nowrap !important;
+    font-size: 0.9rem;
 }
 
 .farm-zebra-table tbody tr:nth-child(odd) {
@@ -482,11 +505,16 @@ input[type="time"].farm-input {
     background-color: var(--farm-table-zebra-olive);
 }
 
+.farm-zebra-table tbody tr:hover {
+    background-color: rgba(250, 209, 217, 0.4) !important;
+    transition: background-color 0.15s ease-in-out;
+}
+
 .farm-zebra-table td {
-    padding: 12px 16px;
+    padding: 12px 14px;
     vertical-align: middle;
     text-align: center;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* --- Schedule View Card (#FAD1D9 Header) --- */
@@ -635,6 +663,9 @@ input[type="time"].farm-input {
     padding: 8px 12px;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .admin-info-label {
@@ -652,6 +683,15 @@ input[type="time"].farm-input {
     color: #1f2937;
     font-weight: 700;
     line-height: 1.25;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 576px) {
+    .admin-info-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
 }
 
 /* Detail Rows for Location and Purpose */
@@ -750,6 +790,12 @@ input[type="time"].farm-input {
     box-shadow: 0 1px 3px rgba(224, 82, 82, 0.3);
 }
 
+.status-badge-ยกเลิกแล้ว {
+    background-color: #6c757d;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(108, 117, 125, 0.3);
+}
+
 /* Secondary Button Styles */
 .farm-btn {
     display: inline-flex;
@@ -796,28 +842,124 @@ input[type="time"].farm-input {
     color: #ffffff;
 }
 
-/* Footer Accent */
+/* --- Footer Styling Matching User Image --- */
 .farm-footer {
     text-align: center;
-    padding: 20px;
-    font-size: 0.88rem;
-    color: #4a5568;
+    padding: 24px 16px 36px 16px;
+    font-size: 0.95rem;
+    color: #3b432a;
     position: relative;
     z-index: 10;
+    margin-top: auto;
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-sizing: border-box;
+}
+
+.farm-footer-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px 12px;
+    font-size: 0.98rem;
+    font-weight: 500;
+    color: #333d21;
+}
+
+.farm-footer-top strong {
+    font-weight: 700;
+    color: var(--farm-olive-deep);
+}
+
+.farm-footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.footer-sep {
+    color: #8c9772;
+    font-weight: 400;
+    margin: 0 4px;
+    user-select: none;
+}
+
+.footer-link {
+    color: #3c4921;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.15s ease;
+}
+
+.footer-link:hover {
+    color: var(--farm-olive-hover);
+    text-decoration: underline;
+}
+
+.footer-admin-link {
+    color: #4b582b;
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-admin-link:hover {
+    color: var(--farm-olive-deep);
+    background-color: rgba(134, 143, 90, 0.15);
+    text-decoration: none;
 }
 
 /* Table Wrapper */
 .farm-table-wrapper {
+    width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
-/* Responsive Styles */
-@media (max-width: 768px) {
+/* Responsive Styles for Tablet & Mobile */
+@media (max-width: 991px) {
     .farm-banner-container {
         flex-direction: column;
         gap: 12px;
         text-align: center;
-        padding: 14px;
+        padding: 14px 16px;
+    }
+
+    .farm-banner-brand {
+        justify-content: center;
+    }
+
+    .farm-banner-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .farm-nav-list {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .farm-main-content {
+        padding: 18px 12px 36px 12px;
     }
 
     .farm-banner-brand {
@@ -832,9 +974,15 @@ input[type="time"].farm-input {
         align-items: center;
     }
 
-    .farm-nav-list {
-        flex-wrap: wrap;
-        justify-content: center;
+    .farm-booking-card,
+    .farm-table-card-yellow,
+    .farm-schedule-card,
+    .farm-pending-card,
+    .farm-creators-card {
+        margin: 0 auto 20px auto;
+        border-radius: 14px;
+        width: 100%;
+        max-width: 100%;
     }
 
     .farm-schedule-header {
@@ -842,8 +990,61 @@ input[type="time"].farm-input {
         gap: 8px;
     }
 
-    .farm-booking-card {
-        margin: 0 4px 24px 4px;
+    .farm-card-header,
+    .farm-schedule-header {
+        padding: 12px 16px;
+    }
+
+    .farm-card-body {
+        padding: 18px 14px;
+    }
+
+    .farm-datetime-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .farm-system-title {
+        font-size: 1.55rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .farm-banner-container {
+        padding: 10px 8px;
+        gap: 10px;
+    }
+
+    .farm-banner-logo {
+        height: 44px;
+        width: 44px;
+    }
+
+    .farm-system-title {
+        font-size: 1.4rem;
+    }
+
+    .farm-system-subtitle {
+        font-size: 0.88rem;
+    }
+
+    .farm-nav-link {
+        font-size: 0.78rem;
+        padding: 5px 10px;
+    }
+
+    .farm-footer {
+        font-size: 0.86rem;
+        padding: 18px 8px 26px 8px;
+    }
+
+    .footer-sep {
+        display: none;
+    }
+
+    .farm-footer-top {
+        flex-direction: column;
+        gap: 4px;
     }
 }
 
@@ -963,4 +1164,206 @@ input[type="time"].farm-input {
 .creator-id-val {
     font-weight: 700;
     letter-spacing: 0.5px;
+}
+
+/* ==============================================================
+   Universal Responsive Centering & Overflow Protection
+   ============================================================== */
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+/* Ensure all cards and containers stay strictly centered */
+.farm-main-content {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+}
+
+/* Ensure text inside table cells, badges, and cards never overflows viewport */
+.farm-booking-card,
+.farm-table-card-yellow,
+.farm-schedule-card,
+.farm-pending-card,
+.farm-creators-card,
+.card {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Responsive Table Protections */
+.table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+/* Global Modal Stacking Safeguards */
+.modal {
+    z-index: 1070 !important;
+}
+
+.modal-backdrop {
+    z-index: 1060 !important;
+}
+
+/* Responsive Modal Styling for Perfect Mobile Centering */
+.modal-dialog {
+    position: relative;
+    z-index: 1075 !important;
+    pointer-events: auto !important;
+    margin: 1.25rem auto;
+    max-width: 95%;
+    width: 100%;
+}
+
+@media (min-width: 576px) {
+    .modal-dialog {
+        max-width: 540px;
+    }
+}
+
+.modal-content {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    pointer-events: auto !important;
+}
+
+/* Status Badge: Always single-line, elegant pill badge (Never wrap vertically!) */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.35;
+    min-width: 80px;
+    box-sizing: border-box;
+}
+
+/* Admin History Card & Filter Styles */
+.admin-history-filter-bar {
+    background: #fafcf8;
+    border-bottom: 1.5px solid var(--farm-rose-border);
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.admin-history-search {
+    position: relative;
+    flex: 1 1 240px;
+    max-width: 380px;
+}
+
+.admin-history-search input {
+    width: 100%;
+    padding: 7px 12px 7px 34px;
+    border-radius: 8px;
+    border: 1.5px solid var(--farm-olive-border-soft);
+    font-size: 0.88rem;
+    color: var(--farm-olive-deep);
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.admin-history-search input:focus {
+    outline: none;
+    border-color: var(--farm-olive);
+    box-shadow: 0 0 0 3px rgba(134, 143, 90, 0.18);
+}
+
+.admin-history-search .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+.admin-filter-chip {
+    border: 1.5px solid var(--farm-olive-border-soft);
+    background: #ffffff;
+    color: var(--farm-olive-deep);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.admin-filter-chip:hover,
+.admin-filter-chip.active {
+    background: var(--farm-olive);
+    color: #ffffff;
+    border-color: var(--farm-olive-deep);
+}
+
+.admin-history-mobile-card {
+    background: #ffffff;
+    border: 1.5px solid var(--farm-rose-border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(134, 143, 90, 0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-history-mobile-card:hover {
+    border-color: var(--farm-olive);
+    box-shadow: 0 4px 12px rgba(134, 143, 90, 0.15);
+}
+
+/* Mobile Screen Layout Enhancements (<= 576px) */
+@media (max-width: 576px) {
+    .farm-main-content {
+        padding: 14px 10px 36px 10px;
+    }
+
+    .farm-schedule-card .p-3,
+    .farm-booking-card .p-3 {
+        padding: 12px 10px !important;
+    }
+
+    .farm-schedule-title {
+        font-size: 1.15rem !important;
+        text-align: center;
+    }
+
+    .farm-schedule-header {
+        text-align: center;
+        justify-content: center !important;
+    }
+
+    .vehicle-summary-card {
+        padding: 10px;
+    }
+
+    .btn {
+        max-width: 100%;
+        white-space: normal;
+        word-break: break-word;
+    }
 }

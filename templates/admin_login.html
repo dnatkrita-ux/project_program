@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+.toggle-password-btn {
+    border: 1.5px solid var(--farm-input-border, #c8d0a8);
+    border-left: none;
+    background: #ffffff;
+    color: #495057;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    font-size: 1.1rem;
+    border-top-right-radius: 10px !important;
+    border-bottom-right-radius: 10px !important;
+    transition: all 0.2s ease-in-out;
+}
+.toggle-password-btn:hover {
+    background-color: var(--farm-rose-tint, #fdf5f6);
+    color: var(--farm-olive-deep, #2c3315);
+}
+.input-group .farm-input {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+</style>
+<div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+        <div class="farm-booking-card mt-3 shadow" style="border: 2px solid var(--farm-olive); border-radius: 16px;">
+            <!-- Admin Card Header -->
+            <div class="farm-card-header text-center justify-content-center" style="background-color: var(--farm-olive); color: white; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                <div class="d-flex align-items-center justify-content-center gap-2">
+                    <span style="font-size: 1.4rem;">🌾</span>
+                    <h4 class="header-title text-white mb-0">เข้าสู่ระบบผู้อนุมัติ (Admin Login)</h4>
+                </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="farm-card-body p-4">
+                <div class="alert alert-light border d-flex align-items-center gap-2 py-2 mb-4" style="font-size: 0.88rem; background-color: var(--farm-olive-tint); border-color: var(--farm-olive-border-soft) !important;">
+                    <span style="font-size: 1.2rem;">🛡️</span>
+                    <div>
+                        <strong>ระบบผู้ดูแลและผู้อนุมัติคำขอ:</strong> กรุณาระบุบัญชีแอดมินและรหัสผ่าน <strong>อย่างน้อย 8 ตัวอักษร</strong>
+                    </div>
+                </div>
+
+                <form action="{{ url_for('admin_login') }}" method="POST" id="adminLoginForm">
+                    <div class="farm-form-group mb-3">
+                        <label class="farm-label fw-bold" style="color: var(--farm-olive-deep);">
+                            ชื่อผู้ใช้หรืออีเมลแอดมิน (Admin Username / Email) <span class="required-asterisk">*</span>
+                        </label>
+                        <input type="text" class="farm-input" name="identifier" id="admin_identifier" placeholder="เช่น admin หรือ admin@agricar.com" required autofocus>
+                    </div>
+
+                    <div class="farm-form-group mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="farm-label fw-bold" style="color: var(--farm-olive-deep);">
+                                รหัสผ่านแอดมิน (อย่างน้อย 8 ตัวอักษร) <span class="required-asterisk">*</span>
+                            </label>
+                            <span id="adminPwdCount" class="badge bg-secondary" style="font-size: 0.75rem;">0 / 8 ตัว</span>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" 
+                                   class="farm-input form-control" 
+                                   name="password" 
+                                   id="admin_password" 
+                                   placeholder="กรอกรหัสผ่านแอดมินอย่างน้อย 8 ตัวอักษร" 
+                                   minlength="8" 
+                                   required 
+                                   oninput="updateCharCount('admin_password', 'adminPwdCount', 8)"
+                                   style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                            <button type="button" class="btn btn-outline-secondary toggle-password-btn" onclick="togglePasswordVisibility('admin_password', this)" title="เปิด/ปิดการมองเห็นรหัสผ่าน" tabindex="-1">
+                                <span class="eye-icon">👁️</span>
+                            </button>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.8rem;">* ระบุรหัสผ่านความยาวอย่างน้อย 8 ตัวอักษร</small>
+                    </div>
+
+                    <button type="submit" class="farm-btn-submit" style="background-color: var(--farm-olive); border-color: var(--farm-olive-border);">
+                        🌾 เข้าสู่ระบบผู้อนุมัติ (Sign In as Admin)
+                    </button>
+                </form>
+
+                <!-- Quick Test Credentials Box -->
+                <div class="mt-4 p-3 rounded" style="background: #fbfbfb; border: 1px dashed var(--farm-olive-border-soft); font-size: 0.85rem;">
+                    <div class="fw-bold text-dark mb-1">🔑 บัญชีแอดมินสำหรับทดสอบระบบ (รหัสผ่าน 8 ตัว):</div>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="fillAdminCreds('admin@agricar.com', 'Admin@123')">
+                            🌾 เมล: admin@agricar.com (Admin@123)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="fillAdminCreds('admin', 'Admin@123')">
+                            🛡️ ชื่อผู้ใช้: admin (Admin@123)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navigation link back to regular user portal -->
+                <div class="text-center mt-4 pt-3 border-top">
+                    <a href="{{ url_for('login') }}" class="text-muted small" style="text-decoration: none;">
+                        🚜 สลับไปยังหน้าเข้าสู่ระบบสำหรับผู้ใช้ทั่วไป
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const eyeIcon = btn.querySelector('.eye-icon') || btn;
+    if (input.type === 'password') {
+        input.type = 'text';
+        eyeIcon.innerText = '🙈';
+        btn.setAttribute('title', 'ซ่อนรหัสผ่าน');
+        btn.classList.add('btn-light');
+    } else {
+        input.type = 'password';
+        eyeIcon.innerText = '👁️';
+        btn.setAttribute('title', 'แสดงรหัสผ่าน');
+        btn.classList.remove('btn-light');
+    }
+}
+
+function updateCharCount(inputId, badgeId, minLen = 8) {
+    const input = document.getElementById(inputId);
+    const badge = document.getElementById(badgeId);
+    if (!input || !badge) return;
+    const len = input.value.length;
+    badge.innerText = `${len} / ${minLen} ตัว`;
+    if (len >= minLen) {
+        badge.className = 'badge bg-success';
+    } else {
+        badge.className = 'badge bg-secondary';
+    }
+}
+
+function fillAdminCreds(ident, pwd) {
+    const i = document.getElementById('admin_identifier');
+    const p = document.getElementById('admin_password');
+    if (i) i.value = ident;
+    if (p) {
+        p.value = pwd;
+        updateCharCount('admin_password', 'adminPwdCount', 8);
+    }
+}
+</script>
+{% endblock %}

@@ -1,26 +1,864 @@
 {% extends 'base.html' %}
 {% block content %}
+<style>
+.toggle-password-btn {
+    border: 1.5px solid var(--farm-input-border, #c8d0a8);
+    border-left: none;
+    background: #ffffff;
+    color: #495057;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    font-size: 1.1rem;
+    border-top-right-radius: 10px !important;
+    border-bottom-right-radius: 10px !important;
+    transition: all 0.2s ease-in-out;
+}
+.toggle-password-btn:hover {
+    background-color: var(--farm-rose-tint, #fdf5f6);
+    color: var(--farm-olive-deep, #2c3315);
+}
+.input-group .farm-input {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+</style>
 <div class="row justify-content-center">
-    <div class="col-12 col-md-6 col-lg-5">
-        <div class="farm-booking-card mt-4">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+        <div class="farm-booking-card mt-3 shadow">
+            <!-- Header bar -->
             <div class="farm-card-header text-center justify-content-center">
-                <h4 class="header-title">🔐 เข้าสู่ระบบผู้อนุมัติ (Agricarbook Admin)</h4>
+                <h4 class="header-title">🔐 เข้าสู่ระบบ Agricarbook</h4>
             </div>
-            <div class="farm-card-body">
-                <form action="{{ url_for('admin_login') }}" method="POST">
-                    <div class="farm-form-group">
-                        <label class="farm-label">รหัสผ่านผู้อนุมัติ (Admin Password)</label>
-                        <input type="password" class="farm-input" name="password" placeholder="กรอกรหัสผ่าน" required autofocus>
+
+            <!-- Card Body with Tabs -->
+            <div class="farm-card-body p-4">
+                <!-- Navigation Tabs (Only User Login & Register - Admin Tab Removed) -->
+                <ul class="nav nav-pills nav-fill mb-4" id="loginTabs" role="tablist" style="background: #f7f9f2; padding: 6px; border-radius: 12px; border: 1.5px solid var(--farm-olive-border-soft);">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if active_tab != 'register' %}active{% endif %}" id="login-tab" data-bs-toggle="pill" data-bs-target="#login-panel" type="button" role="tab" style="font-weight: 700; border-radius: 8px;">
+                            🚜 เข้าสู่ระบบ
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if active_tab == 'register' %}active{% endif %}" id="register-tab" data-bs-toggle="pill" data-bs-target="#register-panel" type="button" role="tab" style="font-weight: 700; border-radius: 8px;">
+                            📝 สมัครสมาชิกใหม่
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="loginTabsContent">
+                    <!-- Tab 1: Unified Login (Login with Email or Thai Citizen ID 13 Digits) -->
+                    <div class="tab-pane fade {% if active_tab != 'register' %}show active{% endif %}" id="login-panel" role="tabpanel">
+                        <div class="alert alert-light border d-flex align-items-center gap-2 py-2 mb-3" style="font-size: 0.85rem; background-color: var(--farm-rose-tint); border-color: var(--farm-rose-border) !important;">
+                            <span>💡</span>
+                            <div>
+                                เข้าสู่ระบบด้วย <strong>อีเมล</strong> หรือ <strong>เลขประจำตัวประชาชน (13 หลัก)</strong> พร้อมรหัสผ่าน <strong>อย่างน้อย 8 ตัวอักษร</strong> (มีตัวอักษร ตัวเลข และอักขระพิเศษ)
+                            </div>
+                        </div>
+
+                        <form action="{{ url_for('login') }}" method="POST" id="unifiedLoginForm">
+                            <div class="farm-form-group">
+                                <label class="farm-label">อีเมล หรือ เลขประจำตัวประชาชน (13 หลัก) <span class="required-asterisk">*</span></label>
+                                <input type="text" class="farm-input" name="identifier" id="login_identifier" placeholder="เช่น somchai@farm.go.th หรือ 1-1001-00111-11-1" required autofocus>
+                                <small class="text-muted" style="font-size: 0.8rem;">* สามารถกรอกอีเมล หรือเลขประจำตัวประชาชน 13 หลัก</small>
+                            </div>
+
+                            <div class="farm-form-group">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="farm-label mb-0">รหัสผ่าน (Password อย่างน้อย 8 ตัวอักษร) <span class="required-asterisk">*</span></label>
+                                    <span id="loginPwdCount" class="badge bg-secondary" style="font-size: 0.75rem;">0 / 8 ตัว</span>
+                                </div>
+                                <div class="input-group">
+                                    <input type="password" 
+                                           class="farm-input form-control" 
+                                           name="password" 
+                                           id="login_password" 
+                                           placeholder="กรอกรหัสผ่านอย่างน้อย 8 ตัวอักษร" 
+                                           minlength="8" 
+                                           required 
+                                           oninput="updateCharCount('login_password', 'loginPwdCount', 8)"
+                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                    <button type="button" class="btn btn-outline-secondary toggle-password-btn" onclick="togglePasswordVisibility('login_password', this)" title="เปิด/ปิดการมองเห็นรหัสผ่าน" tabindex="-1">
+                                        <span class="eye-icon">👁️</span>
+                                    </button>
+                                </div>
+                                <small class="text-muted" style="font-size: 0.8rem;">* ระบุรหัสผ่านความยาวอย่างน้อย 8 ตัวอักษร</small>
+                            </div>
+
+                            <button type="submit" class="farm-btn-submit">🌾 เข้าสู่ระบบ Agricarbook</button>
+                        </form>
+
+                        <!-- Quick Test Credentials Box -->
+                        <div class="mt-4 p-3 rounded" style="background: #fbfbfb; border: 1px dashed var(--farm-olive-border-soft); font-size: 0.84rem;">
+                            <div class="fw-bold text-dark mb-1">🔑 บัญชีตัวอย่างผู้ใช้สำหรับทดลองเข้าใช้งาน (รหัสผ่าน 8 ตัว):</div>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillCreds('login_identifier', 'somchai@farm.go.th', 'login_password', 'User@123', 'loginPwdCount')">
+                                    👤 นายสมชาย (เมล: somchai@farm.go.th)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillCreds('login_identifier', '1-1001-00111-11-1', 'login_password', 'User@123', 'loginPwdCount')">
+                                    🪪 นายสมชาย (ปชช: 1-1001-00111-11-1)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillCreds('login_identifier', 'somsri@farm.go.th', 'login_password', 'Farm#123', 'loginPwdCount')">
+                                    👩‍🌾 นางสมศรี (เมล: somsri@farm.go.th)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillCreds('login_identifier', '3-1005-00123-45-8', 'login_password', 'Farm#123', 'loginPwdCount')">
+                                    🪪 นางสมศรี (ปชช: 3-1005-00123-45-8)
+                                </button>
+                            </div>
+                            <div class="mt-2 text-muted" style="font-size: 0.78rem;">
+                                🛡️ บัญชีผู้ดูแลระบบ (Admin): <a href="{{ url_for('admin_login') }}" class="text-decoration-none fw-bold" style="color: var(--farm-olive-dark);">เข้าสู่ระบบแอดมินที่นี่</a> (admin@agricar.com / Admin@123)
+                            </div>
+                        </div>
                     </div>
-                    <button type="submit" class="farm-btn-submit">เข้าสู่ระบบ</button>
-                </form>
-                <div class="text-center mt-3">
-                    <a href="{{ url_for('user_request') }}" class="text-muted small" style="text-decoration: none;">
-                        ← กลับไปหน้าจองรถ
+
+                    <!-- Tab 2: Register (with Citizen ID Modulo 11 and Email OTP) -->
+                    <div class="tab-pane fade {% if active_tab == 'register' %}show active{% endif %}" id="register-panel" role="tabpanel">
+                        <form action="{{ url_for('register') }}" method="POST" id="registerForm" novalidate>
+                            <!-- 1. ชื่อจริง และ นามสกุล แยก 2 ช่อง -->
+                            <div class="farm-form-group">
+                                <div class="row g-2">
+                                    <div class="col-12 col-md-6">
+                                        <label class="farm-label">ชื่อจริง (รวมคำนำหน้าถ้ามี) <span class="required-asterisk">*</span></label>
+                                        <input type="text" class="farm-input" name="first_name" id="reg_first_name" placeholder="เช่น นายสมเกียรติ หรือ สมเกียรติ" required autocomplete="given-name">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="farm-label">นามสกุล <span class="required-asterisk">*</span></label>
+                                        <input type="text" class="farm-input" name="last_name" id="reg_last_name" placeholder="เช่น สุขเกษม" required autocomplete="family-name">
+                                    </div>
+                                </div>
+                                <input type="hidden" name="full_name" id="reg_full_name">
+                                <small class="text-muted" style="font-size: 0.76rem;">* ระบุชื่อจริงและนามสกุลแยกช่อง เพื่อความถูกต้องและรองรับการคุ้มครองข้อมูลส่วนบุคคล (PDPA)</small>
+                            </div>
+
+                            <!-- 2. เลขประจำตัวประชาชน 13 หลัก (UX Masking & Modulo 11 Checksum) -->
+                            <div class="farm-form-group">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="farm-label mb-0">เลขประจำตัวประชาชน (13 หลัก) <span class="required-asterisk">*</span></label>
+                                    <span id="cidCount" class="badge bg-secondary" style="font-size: 0.75rem;">0 / 13 หลัก</span>
+                                </div>
+                                <div class="position-relative">
+                                    <input type="text" 
+                                           class="farm-input" 
+                                           name="citizen_id" 
+                                           id="reg_citizen_id" 
+                                           placeholder="X-XXXX-XXXXX-XX-X" 
+                                           maxlength="17" 
+                                           autocomplete="off" 
+                                           inputmode="numeric" 
+                                           required>
+                                </div>
+                                <!-- กล่องแจ้งเตือนสถานะ Modulo 11 ทันที -->
+                                <div id="cidFeedback" class="mt-1 small" style="display: none; font-size: 0.82rem;"></div>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <small class="text-muted" style="font-size: 0.76rem;">* ใส่ขีดอัตโนมัติ (UX Masking) และคำนวณสูตร Modulo 11 ทันที</small>
+                                    <button type="button" class="btn btn-link p-0 text-decoration-none text-muted" style="font-size: 0.76rem;" onclick="fillSampleCitizenId('3100500123458')">
+                                        💡 ตัวอย่างเลขผ่าน
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 3. อีเมล และระบบส่ง OTP ยืนยันตัวตน -->
+                            <div class="farm-form-group">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="farm-label mb-0">อีเมลสำหรับติดต่อและยืนยันตัวตน <span class="required-asterisk">*</span></label>
+                                    <span id="emailOtpBadge" class="badge bg-light text-muted border" style="font-size: 0.75rem;">ยังไม่ยืนยัน OTP</span>
+                                </div>
+                                <div class="input-group">
+                                    <input type="email" 
+                                           class="form-control farm-input" 
+                                           name="email" 
+                                           id="reg_email" 
+                                           placeholder="เช่น somkiat@agri.com" 
+                                           required 
+                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                    <button type="button" 
+                                            class="btn btn-outline-success fw-bold px-3 d-flex align-items-center gap-1" 
+                                            id="sendOtpBtn" 
+                                            onclick="requestEmailOtp()"
+                                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; font-size: 0.88rem; background-color: var(--farm-olive-light, #eef1df); border-color: var(--farm-olive); color: var(--farm-olive-dark, #4b522b);">
+                                        <span id="sendOtpSpinner" class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                                        <span id="sendOtpText">📩 ขอรหัส OTP</span>
+                                    </button>
+                                </div>
+                                <div id="emailFeedback" class="mt-1 small" style="display: none; font-size: 0.82rem;"></div>
+                                <input type="hidden" id="isEmailVerified" value="false">
+                            </div>
+
+                            <!-- กล่องยืนยันรหัส OTP (แสดงเมื่อกดขอรหัส) -->
+                            <div id="otpBox" class="p-3 my-3 rounded-3 shadow-sm border" style="display: none; background: #fffafb; border-color: var(--farm-rose-border) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="farm-label mb-0 fw-bold" style="font-size: 0.86rem; color: #495057;">
+                                        🔢 ระบุรหัส OTP 6 หลักที่ได้รับ:
+                                    </label>
+                                    <span id="otpTimerBadge" class="badge bg-warning text-dark" style="font-size: 0.75rem;">⏱️ 05:00 นาที</span>
+                                </div>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control farm-input text-center fw-bold" 
+                                           id="otp_input" 
+                                           placeholder="• • • • • •" 
+                                           maxlength="6" 
+                                           inputmode="numeric" 
+                                           style="letter-spacing: 6px; font-size: 1.15rem; border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                    <button type="button" 
+                                            class="btn btn-primary fw-bold px-3" 
+                                            id="verifyOtpBtn" 
+                                            onclick="verifyEmailOtp()"
+                                            style="background-color: var(--farm-olive); border-color: var(--farm-olive); border-top-left-radius: 0; border-bottom-left-radius: 0; font-size: 0.88rem;">
+                                        <span id="verifyOtpSpinner" class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
+                                        <span id="verifyOtpText">✅ ยืนยัน OTP</span>
+                                    </button>
+                                </div>
+                                <div id="otpFeedback" class="mt-2 small" style="font-size: 0.82rem;"></div>
+                                
+                                <!-- ป้ายโหมดจำลองระบบสำหรับการทดสอบทันที (Demo Mode Helper) -->
+                                <div id="simulatedOtpBanner" class="mt-2 p-2 rounded small" style="display: none; background: #f0fdf4; border: 1px dashed #86efac; color: #166534;">
+                                    <span>🧪 <strong>โหมดทดสอบ:</strong> รหัส OTP ที่ระบบส่งคือ <mark class="px-2 py-0 fw-bold bg-white rounded border" id="demoOtpVal"></mark></span>
+                                    <button type="button" class="btn btn-sm btn-outline-success py-0 px-2 ms-2" onclick="quickFillOtp()">คลิกกรอกทันที</button>
+                                </div>
+                            </div>
+
+                            <!-- 5. กำหนดรหัสผ่าน (อย่างน้อย 8 ตัวอักษร พร้อมอักษรอังกฤษ ตัวเลข และอักขระพิเศษ) -->
+                            <div class="farm-form-group">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="farm-label mb-0">กำหนดรหัสผ่าน (อย่างน้อย 8 ตัวอักษร) <span class="required-asterisk">*</span></label>
+                                    <span id="regPwdCount" class="badge bg-secondary" style="font-size: 0.75rem;">0 / 8 ตัว</span>
+                                </div>
+                                <div class="input-group">
+                                    <input type="password" 
+                                           class="farm-input form-control" 
+                                           name="password" 
+                                           id="reg_password" 
+                                           placeholder="ตั้งรหัสผ่านความยาว 8 ตัวขึ้นไป" 
+                                           minlength="8" 
+                                           required 
+                                           oninput="onPasswordInput()"
+                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                    <button type="button" class="btn btn-outline-secondary toggle-password-btn" onclick="togglePasswordVisibility('reg_password', this)" title="เปิด/ปิดการมองเห็นรหัสผ่าน" tabindex="-1">
+                                        <span class="eye-icon">👁️</span>
+                                    </button>
+                                </div>
+
+                                <!-- กล่องแสดงข้อกำหนดรหัสผ่านว่าต้องมีอะไรบ้าง (Dynamic Requirements Checklist) -->
+                                <div class="p-3 my-2 rounded-3 border" id="pwdRequirementsBox" style="background: #fafcf8; border-color: var(--farm-olive-border-soft) !important;">
+                                    <div class="fw-bold mb-2" style="font-size: 0.82rem; color: var(--farm-olive-deep);">
+                                        🛡️ รหัสผ่านต้องประกอบด้วย (ขึ้นโชว์เงื่อนไข):
+                                    </div>
+                                    <div class="row g-2" style="font-size: 0.8rem;">
+                                        <div class="col-12 col-sm-6 text-muted" id="req-len">
+                                            <span class="req-icon me-1">⚪</span> <strong>ความยาวอย่างน้อย 8 ตัว</strong>
+                                        </div>
+                                        <div class="col-12 col-sm-6 text-muted" id="req-letter">
+                                            <span class="req-icon me-1">⚪</span> <strong>ตัวอักษรอังกฤษ</strong> (A-Z, a-z)
+                                        </div>
+                                        <div class="col-12 col-sm-6 text-muted" id="req-number">
+                                            <span class="req-icon me-1">⚪</span> <strong>ตัวเลขอารบิก</strong> (0-9)
+                                        </div>
+                                        <div class="col-12 col-sm-6 text-muted" id="req-special">
+                                            <span class="req-icon me-1">⚪</span> <strong>อักขระพิเศษ</strong> (!@#$%^&*-+ฯลฯ)
+                                        </div>
+                                    </div>
+                                    <div id="pwdOverallStatus" class="mt-2 small fw-bold" style="display: none;"></div>
+                                </div>
+                            </div>
+
+                            <!-- 6. ยืนยันรหัสผ่าน พร้อมปุ่มเปิดปิดตา -->
+                            <div class="farm-form-group">
+                                <label class="farm-label">ยืนยันรหัสผ่านอีกครั้ง <span class="required-asterisk">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" 
+                                           class="farm-input form-control" 
+                                           name="confirm_password" 
+                                           id="reg_confirm_password" 
+                                           placeholder="พิมพ์รหัสผ่านเดิมซ้ำอีกครั้ง" 
+                                           minlength="8" 
+                                           required
+                                           oninput="checkPasswordMatch()"
+                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                    <button type="button" class="btn btn-outline-secondary toggle-password-btn" onclick="togglePasswordVisibility('reg_confirm_password', this)" title="เปิด/ปิดการมองเห็นรหัสผ่าน" tabindex="-1">
+                                        <span class="eye-icon">👁️</span>
+                                    </button>
+                                </div>
+                                <div id="pwdMatchFeedback" class="mt-1 small" style="display: none; font-size: 0.82rem;"></div>
+                            </div>
+
+                            <!-- ปุ่มสมัครสมาชิก -->
+                            <button type="submit" class="farm-btn-submit" id="regSubmitBtn">
+                                📝 สมัครสมาชิกผู้ขอใช้รถ
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4 pt-2 border-top">
+                    <a href="{{ url_for('overview_calendar') }}" class="text-muted small" style="text-decoration: none;">
+                        📊 ตารางการใช้รถ
                     </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// ==============================================================
+// 1. ฟังก์ชันคำนวณและตรวจสอบ Checksum เลขประจำตัวประชาชน 13 หลัก (Modulo 11)
+// ==============================================================
+function validateThaiCitizenId(idStr) {
+    if (!idStr) {
+        return { valid: false, message: 'กรุณากรอกเลขประจำตัวประชาชน 13 หลัก', level: 'empty' };
+    }
+    const digits = idStr.replace(/\D/g, '');
+    if (digits.length < 13) {
+        return { 
+            valid: false, 
+            message: `⚠️ กำลังกรอก: ${digits.length} / 13 หลัก (กรอกยังไม่ครบ)`, 
+            level: 'incomplete', 
+            digits: digits 
+        };
+    }
+    if (digits.length > 13) {
+        return { valid: false, message: '❌ เลขประจำตัวประชาชนเกิน 13 หลัก', level: 'invalid' };
+    }
+
+    // ห้ามเป็นเลขตองซ้ำกัน 13 หลัก เช่น 0000000000000 หรือ 1111111111111
+    if (/^(\d)\1{12}$/.test(digits)) {
+        return { valid: false, message: '❌ เลขประจำตัวประชาชนไม่ถูกต้อง (เป็นเลขตัวเดียวกันทั้งหมด)', level: 'invalid' };
+    }
+
+    // คำนวณตามสูตร Modulo 11:
+    // sum = d1*13 + d2*12 + ... + d12*2
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+        sum += parseInt(digits.charAt(i), 10) * (13 - i);
+    }
+    const checkDigit = (11 - (sum % 11)) % 10;
+    const lastDigit = parseInt(digits.charAt(12), 10);
+
+    if (checkDigit !== lastDigit) {
+        return { 
+            valid: false, 
+            message: `❌ เลขประจำตัวประชาชนไม่ถูกต้อง (คำนวณ Checksum ไม่ผ่าน: ได้ ${checkDigit} แต่หลักสุดท้ายเป็น ${lastDigit})`, 
+            level: 'invalid' 
+        };
+    }
+
+    return { 
+        valid: true, 
+        message: '✅ เลขประจำตัวประชาชนถูกต้อง (ผ่านการตรวจสอบ Modulo 11 Checksum)', 
+        level: 'valid', 
+        clean: digits 
+    };
+}
+
+// ==============================================================
+// 2. ฟังก์ชันจัดรูปแบบ Masking เลขประจำตัวประชาชน (X-XXXX-XXXXX-XX-X)
+// ==============================================================
+function formatThaiCitizenId(value) {
+    // กรองเอาเฉพาะตัวเลข 0-9 ไม่เกิน 13 ตัว
+    const digits = value.replace(/\D/g, '').substring(0, 13);
+    const parts = [];
+    if (digits.length > 0) parts.push(digits.substring(0, 1));
+    if (digits.length > 1) parts.push(digits.substring(1, 5));
+    if (digits.length > 5) parts.push(digits.substring(5, 10));
+    if (digits.length > 10) parts.push(digits.substring(10, 12));
+    if (digits.length > 12) parts.push(digits.substring(12, 13));
+    return { formatted: parts.join('-'), count: digits.length, raw: digits };
+}
+
+// ==============================================================
+// 3. ผูก Event Listeners ป้องกันพิมพ์ตัวอักษร และ Masking แบบ Real-time
+// ==============================================================
+document.addEventListener('DOMContentLoaded', function () {
+    const cidInput = document.getElementById('reg_citizen_id');
+    const cidCount = document.getElementById('cidCount');
+    const cidFeedback = document.getElementById('cidFeedback');
+
+    const regForm = document.getElementById('registerForm');
+
+    // ป้องกันการกดคีย์ที่ไม่ใช่ตัวเลขสำหรับ Citizen ID
+    if (cidInput) {
+        cidInput.addEventListener('keydown', function (e) {
+            // อนุญาตปุ่มควบคุม: Backspace, Tab, Enter, Delete, ลูกศร, และ Shortcut คัดลอก/วาง
+            const allowedKeys = ['Backspace', 'Tab', 'Enter', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+            if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+                return;
+            }
+            // ถ้าไม่ใช่ตัวเลข 0-9 ให้บล็อกทันที
+            if (!/^[0-9]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        // จัดการ Masking และ Checksum ทันทีที่พิมพ์
+        cidInput.addEventListener('input', function () {
+            const masked = formatThaiCitizenId(this.value);
+            this.value = masked.formatted;
+            
+            // อัปเดตตัวนับหลัก
+            cidCount.innerText = `${masked.count} / 13 หลัก`;
+            if (masked.count === 13) {
+                cidCount.className = 'badge bg-primary';
+            } else {
+                cidCount.className = 'badge bg-secondary';
+            }
+
+            // คำนวณ Modulo 11
+            const res = validateThaiCitizenId(this.value);
+            cidFeedback.style.display = 'block';
+
+            if (res.level === 'empty') {
+                cidFeedback.style.display = 'none';
+                this.classList.remove('is-valid', 'is-invalid');
+            } else if (res.level === 'incomplete') {
+                cidFeedback.className = 'mt-1 text-warning fw-semibold';
+                cidFeedback.innerHTML = res.message;
+                this.classList.remove('is-valid', 'is-invalid');
+            } else if (res.valid) {
+                cidFeedback.className = 'mt-1 text-success fw-bold';
+                cidFeedback.innerHTML = res.message;
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                cidFeedback.className = 'mt-1 text-danger fw-bold';
+                cidFeedback.innerHTML = res.message;
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+
+        // ตรวจสอบเมื่อโฟกัสหลุด (blur)
+        cidInput.addEventListener('blur', function () {
+            if (this.value) {
+                const res = validateThaiCitizenId(this.value);
+                cidFeedback.style.display = 'block';
+                if (!res.valid) {
+                    cidFeedback.className = 'mt-1 text-danger fw-bold';
+                    cidFeedback.innerHTML = res.message;
+                    this.classList.add('is-invalid');
+                }
+            }
+        });
+    }
+
+    // ซิงโครไนซ์ชื่อจริงและนามสกุลเข้า hidden full_name
+    const regFnInput = document.getElementById('reg_first_name');
+    const regLnInput = document.getElementById('reg_last_name');
+    const regFullInput = document.getElementById('reg_full_name');
+    function syncRegFullName() {
+        if (regFnInput && regLnInput && regFullInput) {
+            const f = regFnInput.value.trim();
+            const l = regLnInput.value.trim();
+            regFullInput.value = (f || l) ? `${f} ${l}`.trim() : '';
+        }
+    }
+    if (regFnInput) regFnInput.addEventListener('input', syncRegFullName);
+    if (regLnInput) regLnInput.addEventListener('input', syncRegFullName);
+
+    // ตรวจสอบการส่งฟอร์ม (Form Submit Guard)
+    if (regForm) {
+        regForm.addEventListener('submit', function (e) {
+            // 0. ตรวจสอบชื่อจริงและนามสกุล
+            const fnVal = regFnInput ? regFnInput.value.trim() : '';
+            const lnVal = regLnInput ? regLnInput.value.trim() : '';
+            if (!fnVal || !lnVal) {
+                e.preventDefault();
+                alert('⚠️ กรุณากรอกทั้งชื่อจริงและนามสกุลให้ครบถ้วน');
+                if (!fnVal && regFnInput) regFnInput.focus();
+                else if (regLnInput) regLnInput.focus();
+                return false;
+            }
+            if (regFullInput) regFullInput.value = `${fnVal} ${lnVal}`;
+
+            // 1. ตรวจสอบบัตรประชาชน
+            const cidVal = cidInput.value;
+            const cidRes = validateThaiCitizenId(cidVal);
+            if (!cidRes.valid) {
+                e.preventDefault();
+                alert(`⚠️ ตรวจสอบเลขประจำตัวประชาชน:\n${cidRes.message}`);
+                cidInput.focus();
+                return false;
+            }
+
+            // 2. ตรวจสอบการยืนยันรหัส OTP
+            const isVerified = document.getElementById('isEmailVerified').value === 'true';
+            if (!isVerified) {
+                e.preventDefault();
+                alert('⚠️ กรุณากดยืนยันรหัส OTP ที่ส่งไปยังอีเมลของคุณก่อนทำการลงทะเบียน');
+                const sendBtn = document.getElementById('sendOtpBtn');
+                if (sendBtn) sendBtn.focus();
+                return false;
+            }
+
+            // 4. ตรวจสอบรหัสผ่าน 8 ตัวขึ้นไป และเงื่อนไขความปลอดภัย
+            const pwd = document.getElementById('reg_password').value;
+            const confirmPwd = document.getElementById('reg_confirm_password').value;
+            if (pwd.length < 8) {
+                e.preventDefault();
+                alert(`⚠️ รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร (ปัจจุบันคุณกรอกมา ${pwd.length} ตัว)`);
+                document.getElementById('reg_password').focus();
+                return false;
+            }
+            if (!/[a-zA-Z]/.test(pwd)) {
+                e.preventDefault();
+                alert('⚠️ รหัสผ่านต้องมีตัวอักษรภาษาอังกฤษ (A-Z หรือ a-z) อย่างน้อย 1 ตัว');
+                document.getElementById('reg_password').focus();
+                return false;
+            }
+            if (!/[0-9]/.test(pwd)) {
+                e.preventDefault();
+                alert('⚠️ รหัสผ่านต้องมีตัวเลข (0-9) อย่างน้อย 1 ตัว');
+                document.getElementById('reg_password').focus();
+                return false;
+            }
+            if (!/[^a-zA-Z0-9]/.test(pwd)) {
+                e.preventDefault();
+                alert('⚠️ รหัสผ่านต้องมีอักขระพิเศษ (เช่น ! @ # $ % ^ & * _ -) อย่างน้อย 1 ตัว');
+                document.getElementById('reg_password').focus();
+                return false;
+            }
+            if (pwd !== confirmPwd) {
+                e.preventDefault();
+                alert('⚠️ รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
+                document.getElementById('reg_confirm_password').focus();
+                return false;
+            }
+
+            return true;
+        });
+    }
+});
+
+// ==============================================================
+// 5. ระบบ Email OTP (ขอรหัส, จับเวลาถอยหลัง, และยืนยัน)
+// ==============================================================
+let otpTimerInterval = null;
+let otpSecondsLeft = 300; // 5 นาที
+
+function requestEmailOtp() {
+    const emailInput = document.getElementById('reg_email');
+    const email = emailInput.value.trim().toLowerCase();
+    const sendBtn = document.getElementById('sendOtpBtn');
+    const sendText = document.getElementById('sendOtpText');
+    const sendSpinner = document.getElementById('sendOtpSpinner');
+    const feedback = document.getElementById('emailFeedback');
+    const otpBox = document.getElementById('otpBox');
+
+    // ตรวจสอบรูปแบบอีเมลเบื้องต้น
+    if (!email || !email.includes('@') || !email.includes('.')) {
+        alert('⚠️ กรุณากรอกอีเมลให้ถูกต้องก่อนกดขอรหัส OTP');
+        emailInput.focus();
+        return;
+    }
+
+    sendBtn.disabled = true;
+    sendSpinner.style.display = 'inline-block';
+    sendText.innerText = 'กำลังส่ง...';
+    feedback.style.display = 'none';
+
+    fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+    })
+    .then(res => res.json())
+    .then(data => {
+        sendSpinner.style.display = 'none';
+        sendText.innerText = '🔄 ส่งรหัสอีกครั้ง';
+        
+        if (data.success) {
+            feedback.style.display = 'block';
+            feedback.className = 'mt-1 text-success fw-bold';
+            feedback.innerHTML = `✅ ${data.message}`;
+
+            otpBox.style.display = 'block';
+            startOtpCountdown(data.expires_in || 300);
+
+            // หากอยู่ในโหมดจำลอง แสดง demo_otp อำนวยความสะดวกให้ผู้ทดสอบ
+            if (data.demo_otp) {
+                document.getElementById('simulatedOtpBanner').style.display = 'block';
+                document.getElementById('demoOtpVal').innerText = data.demo_otp;
+                window.lastDemoOtp = data.demo_otp;
+            }
+
+            document.getElementById('otp_input').focus();
+            
+            // ป้องกันการกดย้ำเป็นเวลา 60 วินาที
+            let cooldown = 60;
+            sendBtn.disabled = true;
+            const cooldownTimer = setInterval(() => {
+                cooldown--;
+                if (cooldown <= 0) {
+                    clearInterval(cooldownTimer);
+                    sendBtn.disabled = false;
+                    sendText.innerText = '📩 ขอรหัสอีกครั้ง';
+                } else {
+                    sendText.innerText = `รอ ${cooldown}วิ`;
+                }
+            }, 1000);
+
+        } else {
+            sendBtn.disabled = false;
+            feedback.style.display = 'block';
+            feedback.className = 'mt-1 text-danger fw-bold';
+            feedback.innerHTML = `❌ ${data.message || 'ไม่สามารถส่ง OTP ได้'}`;
+            alert(`ข้อผิดพลาด: ${data.message}`);
+        }
+    })
+    .catch(err => {
+        sendSpinner.style.display = 'none';
+        sendBtn.disabled = false;
+        sendText.innerText = '📩 ขอรหัส OTP';
+        feedback.style.display = 'block';
+        feedback.className = 'mt-1 text-danger fw-bold';
+        feedback.innerHTML = '❌ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์';
+    });
+}
+
+function verifyEmailOtp() {
+    const email = document.getElementById('reg_email').value.trim().toLowerCase();
+    const otp = document.getElementById('otp_input').value.trim();
+    const verifyBtn = document.getElementById('verifyOtpBtn');
+    const verifyText = document.getElementById('verifyOtpText');
+    const verifySpinner = document.getElementById('verifyOtpSpinner');
+    const feedback = document.getElementById('otpFeedback');
+    const badge = document.getElementById('emailOtpBadge');
+
+    if (!otp || otp.length !== 6) {
+        alert('⚠️ กรุณากรอกรหัส OTP ให้ครบ 6 หลัก');
+        document.getElementById('otp_input').focus();
+        return;
+    }
+
+    verifyBtn.disabled = true;
+    verifySpinner.style.display = 'inline-block';
+    verifyText.innerText = 'กำลังตรวจ...';
+
+    fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, otp: otp })
+    })
+    .then(res => res.json())
+    .then(data => {
+        verifySpinner.style.display = 'none';
+        verifyBtn.disabled = false;
+        verifyText.innerText = '✅ ยืนยัน OTP';
+
+        if (data.success) {
+            feedback.className = 'mt-2 text-success fw-bold';
+            feedback.innerHTML = `🎉 ${data.message}`;
+
+            // ทำเครื่องหมายว่ายืนยันผ่านแล้ว
+            document.getElementById('isEmailVerified').value = 'true';
+            document.getElementById('reg_email').readOnly = true;
+            document.getElementById('otp_input').disabled = true;
+            document.getElementById('verifyOtpBtn').disabled = true;
+            document.getElementById('sendOtpBtn').disabled = true;
+
+            badge.className = 'badge bg-success';
+            badge.innerText = '✅ ยืนยัน OTP เรียบร้อย';
+
+            clearInterval(otpTimerInterval);
+            document.getElementById('otpTimerBadge').className = 'badge bg-success';
+            document.getElementById('otpTimerBadge').innerText = '✅ สำเร็จ';
+            
+            // โฟกัสไปที่ช่องรหัสผ่าน
+            document.getElementById('reg_password').focus();
+        } else {
+            feedback.className = 'mt-2 text-danger fw-bold';
+            feedback.innerHTML = `❌ ${data.message || 'รหัส OTP ไม่ถูกต้อง'}`;
+            alert(`ข้อผิดพลาด: ${data.message}`);
+        }
+    })
+    .catch(err => {
+        verifySpinner.style.display = 'none';
+        verifyBtn.disabled = false;
+        verifyText.innerText = '✅ ยืนยัน OTP';
+        feedback.className = 'mt-2 text-danger fw-bold';
+        feedback.innerHTML = '❌ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์';
+    });
+}
+
+function startOtpCountdown(seconds) {
+    clearInterval(otpTimerInterval);
+    otpSecondsLeft = seconds;
+    const badge = document.getElementById('otpTimerBadge');
+
+    function updateBadge() {
+        const m = Math.floor(otpSecondsLeft / 60);
+        const s = otpSecondsLeft % 60;
+        badge.innerText = `⏱️ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} นาที`;
+        if (otpSecondsLeft <= 60) {
+            badge.className = 'badge bg-danger';
+        } else {
+            badge.className = 'badge bg-warning text-dark';
+        }
+    }
+
+    updateBadge();
+    otpTimerInterval = setInterval(() => {
+        otpSecondsLeft--;
+        if (otpSecondsLeft <= 0) {
+            clearInterval(otpTimerInterval);
+            badge.className = 'badge bg-danger';
+            badge.innerText = '❌ รหัสหมดอายุ';
+            document.getElementById('otpFeedback').className = 'mt-2 text-danger fw-bold';
+            document.getElementById('otpFeedback').innerText = 'รหัส OTP หมดอายุแล้ว กรุณากดขอรหัสใหม่';
+        } else {
+            updateBadge();
+        }
+    }, 1000);
+}
+
+// ฟังก์ชันกรอกค่าตัวอย่างรวดเร็ว
+function fillSampleCitizenId(val) {
+    const input = document.getElementById('reg_citizen_id');
+    if (input) {
+        input.value = val;
+        input.dispatchEvent(new Event('input'));
+    }
+}
+
+function quickFillOtp() {
+    if (window.lastDemoOtp) {
+        const input = document.getElementById('otp_input');
+        input.value = window.lastDemoOtp;
+        verifyEmailOtp();
+    }
+}
+
+// ==============================================================
+// 6. ฟังก์ชันเปิด/ปิดตาดูรหัสผ่าน (Show/Hide Password Toggle)
+// ==============================================================
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const eyeIcon = btn.querySelector('.eye-icon') || btn;
+    if (input.type === 'password') {
+        input.type = 'text';
+        eyeIcon.innerText = '🙈';
+        btn.setAttribute('title', 'ซ่อนรหัสผ่าน');
+        btn.classList.add('btn-light');
+    } else {
+        input.type = 'password';
+        eyeIcon.innerText = '👁️';
+        btn.setAttribute('title', 'แสดงรหัสผ่าน');
+        btn.classList.remove('btn-light');
+    }
+}
+
+// ==============================================================
+// 7. ฟังก์ชันตรวจสอบข้อกำหนดรหัสผ่านแบบ Real-time (Dynamic Checklist)
+// ==============================================================
+function onPasswordInput() {
+    const pwdInput = document.getElementById('reg_password');
+    const badge = document.getElementById('regPwdCount');
+    const val = pwdInput.value;
+    const len = val.length;
+
+    // อัปเดตตัวนับความยาว (อย่างน้อย 8 ตัว)
+    badge.innerText = `${len} / 8 ตัว`;
+    if (len >= 8) {
+        badge.className = 'badge bg-success';
+    } else {
+        badge.className = 'badge bg-secondary';
+    }
+
+    // ตรวจสอบเงื่อนไขแต่ละข้อ
+    const hasLen = len >= 8;
+    const hasLetter = /[a-zA-Z]/.test(val);
+    const hasNumber = /[0-9]/.test(val);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(val);
+
+    updateReqItem('req-len', hasLen, 'ความยาวอย่างน้อย 8 ตัว');
+    updateReqItem('req-letter', hasLetter, 'ตัวอักษรอังกฤษ (A-Z, a-z)');
+    updateReqItem('req-number', hasNumber, 'ตัวเลขอารบิก (0-9)');
+    updateReqItem('req-special', hasSpecial, 'อักขระพิเศษ (!@#$%^&*-+ฯลฯ)');
+
+    const overall = document.getElementById('pwdOverallStatus');
+    if (val.length === 0) {
+        overall.style.display = 'none';
+        pwdInput.classList.remove('is-valid', 'is-invalid');
+    } else if (hasLen && hasLetter && hasNumber && hasSpecial) {
+        overall.style.display = 'block';
+        overall.className = 'mt-2 small text-success fw-bold';
+        overall.innerHTML = '🎉 รหัสผ่านปลอดภัย ถูกต้องครบทุกเงื่อนไข!';
+        pwdInput.classList.remove('is-invalid');
+        pwdInput.classList.add('is-valid');
+    } else {
+        overall.style.display = 'block';
+        overall.className = 'mt-2 small text-warning fw-semibold';
+        overall.innerHTML = '⚠️ ยังไม่ครบเงื่อนไขความปลอดภัย (ดูรายการที่ยังเป็น ⚪ ด้านบน)';
+        pwdInput.classList.remove('is-valid');
+    }
+
+    checkPasswordMatch();
+}
+
+function updateReqItem(elemId, isValid, label) {
+    const elem = document.getElementById(elemId);
+    if (!elem) return;
+    if (isValid) {
+        elem.className = 'col-12 col-sm-6 text-success fw-bold';
+        elem.innerHTML = `<span class="req-icon me-1">✅</span> <strong>${label}</strong>`;
+    } else {
+        elem.className = 'col-12 col-sm-6 text-muted';
+        elem.innerHTML = `<span class="req-icon me-1">⚪</span> <strong>${label}</strong>`;
+    }
+}
+
+function checkPasswordMatch() {
+    const pwd = document.getElementById('reg_password').value;
+    const confirmInput = document.getElementById('reg_confirm_password');
+    const feedback = document.getElementById('pwdMatchFeedback');
+    if (!confirmInput || !feedback) return;
+    const cVal = confirmInput.value;
+
+    if (cVal.length === 0) {
+        feedback.style.display = 'none';
+        confirmInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+
+    feedback.style.display = 'block';
+    if (pwd === cVal) {
+        feedback.className = 'mt-1 small text-success fw-bold';
+        feedback.innerHTML = '✅ รหัสผ่านตรงกันเรียบร้อยแล้ว';
+        confirmInput.classList.remove('is-invalid');
+        confirmInput.classList.add('is-valid');
+    } else {
+        feedback.className = 'mt-1 small text-danger fw-bold';
+        feedback.innerHTML = '❌ รหัสผ่านยังไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง';
+        confirmInput.classList.remove('is-valid');
+        confirmInput.classList.add('is-invalid');
+    }
+}
+
+function updateCharCount(inputId, badgeId, minLen = 8) {
+    const input = document.getElementById(inputId);
+    const badge = document.getElementById(badgeId);
+    if (!input || !badge) return;
+    const len = input.value.length;
+    badge.innerText = `${len} / ${minLen} ตัว`;
+    if (len >= minLen) {
+        badge.className = 'badge bg-success';
+    } else {
+        badge.className = 'badge bg-secondary';
+    }
+}
+
+function fillCreds(uId, uVal, pId, pVal, badgeId) {
+    const u = document.getElementById(uId);
+    const p = document.getElementById(pId);
+    if (u) u.value = uVal;
+    if (p) {
+        p.value = pVal;
+        updateCharCount(pId, badgeId, 8);
+    }
+}
+</script>
 {% endblock %}

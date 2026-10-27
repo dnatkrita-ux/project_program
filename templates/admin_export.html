@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-11">
+        <!-- Page Title Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div>
+                <h3 class="fw-bold" style="color: var(--farm-olive-deep); margin: 0; font-size: 1.6rem;">📥 ส่งออกรายงานการจองรถ (Excel Export)</h3>
+                <p class="text-muted mb-0" style="font-size: 0.95rem;">เลือกระยะเวลาที่ต้องการ และดาวน์โหลดรายงานสรุปการเช่ายานพาหนะและสถานะในรูปแบบไฟล์ Excel (.xlsx)</p>
+            </div>
+            <div class="mt-2 mt-md-0 d-flex gap-2">
+                <a href="{{ url_for('admin_approve') }}" class="btn btn-outline-secondary" style="border-radius: 8px;">
+                    ⬅ กลับหน้าอนุมัติ
+                </a>
+                <a href="{{ url_for('admin_overview_calendar') }}" class="btn btn-outline-primary" style="border-radius: 8px;">
+                    📊 ตารางการใช้รถ
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter Card -->
+        <div class="card border-0 shadow-sm mb-4" style="background: #ffffff; border: 2px solid var(--farm-olive-border-soft) !important; border-radius: var(--farm-card-radius);">
+            <div class="card-header py-3" style="background-color: var(--farm-olive); color: white; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 1.25rem;">⚙️</span>
+                    <h5 class="mb-0 fw-bold">กำหนดเงื่อนไขการส่งออกรายงาน</h5>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <form action="{{ url_for('admin_export_page') }}" method="GET" id="filterForm">
+                    <div class="row g-3">
+                        <!-- Start Date -->
+                        <div class="col-12 col-md-3">
+                            <label class="farm-label fw-bold">📅 วันที่เริ่มต้นค้นหา</label>
+                            <input type="date" class="farm-input" name="start_date" id="filterStartDate" value="{{ filter_start }}" required>
+                        </div>
+
+                        <!-- End Date -->
+                        <div class="col-12 col-md-3">
+                            <label class="farm-label fw-bold">🏁 วันที่สิ้นสุดค้นหา</label>
+                            <input type="date" class="farm-input" name="end_date" id="filterEndDate" value="{{ filter_end }}" required>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="col-12 col-md-3">
+                            <label class="farm-label fw-bold">📌 สถานะคำขอ</label>
+                            <select class="farm-select" name="status" id="filterStatus">
+                                <option value="ALL" {% if filter_status == 'ALL' %}selected{% endif %}>ทั้งหมดทุกสถานะ</option>
+                                <option value="อนุมัติ" {% if filter_status == 'อนุมัติ' %}selected{% endif %}>✔ อนุมัติแล้ว</option>
+                                <option value="รออนุมัติ" {% if filter_status == 'รออนุมัติ' %}selected{% endif %}>⏳ รออนุมัติ</option>
+                                <option value="ไม่อนุมัติ" {% if filter_status == 'ไม่อนุมัติ' %}selected{% endif %}>✖ ไม่อนุมัติ</option>
+                            </select>
+                        </div>
+
+                        <!-- Vehicle Filter -->
+                        <div class="col-12 col-md-3">
+                            <label class="farm-label fw-bold">🚜 ยานพาหนะ</label>
+                            <select class="farm-select" name="vehicle" id="filterVehicle">
+                                <option value="ALL" {% if filter_vehicle == 'ALL' %}selected{% endif %}>ทั้งหมด (ทุกคัน)</option>
+                                {% for v in vehicles %}
+                                <option value="{{ v }}" {% if filter_vehicle == v %}selected{% endif %}>{{ v }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top gap-2">
+                        <div class="text-muted small">
+                            💡 กำหนดช่วงเวลาที่ต้องการดูข้อมูล จากนั้นกด <strong>"กรองข้อมูล"</strong> เพื่อดูตัวอย่าง หรือกด <strong>"ดาวน์โหลด Excel"</strong> เพื่อรับไฟล์ทันที
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-outline-dark px-3 py-2" style="border-radius: 8px; font-weight: 600;">
+                                🔍 กรองข้อมูลตัวอย่าง
+                            </button>
+                            <button type="button" class="farm-btn-submit m-0 px-4 py-2" onclick="downloadExcel()" style="width: auto; background-color: #2e5917; border-color: #234511;">
+                                📥 ดาวน์โหลดไฟล์ Excel (.xlsx)
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Summary Stats Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card p-3 border-0 shadow-sm text-center" style="background: #ffffff; border-radius: 12px; border-left: 5px solid var(--farm-olive) !important;">
+                    <div class="text-muted small fw-bold">รายการจองในช่วงที่เลือก</div>
+                    <div class="fs-2 fw-bold" style="color: var(--farm-olive-deep);">{{ filtered_bookings|length }}</div>
+                    <div class="small text-muted">รายการทั้งหมด</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card p-3 border-0 shadow-sm text-center" style="background: #ffffff; border-radius: 12px; border-left: 5px solid #2e5917 !important;">
+                    <div class="text-muted small fw-bold">อนุมัติแล้ว</div>
+                    <div class="fs-2 fw-bold text-success">{{ count_approved }}</div>
+                    <div class="small text-muted">พร้อมนำรถไปใช้งาน</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card p-3 border-0 shadow-sm text-center" style="background: #ffffff; border-radius: 12px; border-left: 5px solid #d99b26 !important;">
+                    <div class="text-muted small fw-bold">รอการอนุมัติ</div>
+                    <div class="fs-2 fw-bold text-warning">{{ count_pending }}</div>
+                    <div class="small text-muted">รอผู้ดูแลพิจารณา</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card p-3 border-0 shadow-sm text-center" style="background: #ffffff; border-radius: 12px; border-left: 5px solid #c94c5d !important;">
+                    <div class="text-muted small fw-bold">ไม่อนุมัติ</div>
+                    <div class="fs-2 fw-bold text-danger">{{ count_rejected }}</div>
+                    <div class="small text-muted">ยกเลิกหรือไม่อนุมัติ</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Table -->
+        <div class="farm-table-card-yellow mb-5">
+            <div class="farm-card-header-clipboard d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span>📑</span>
+                    <span>ตารางตัวอย่างข้อมูลที่จะถูกส่งออก (ช่วงวันที่ {{ filter_start }} ถึง {{ filter_end }})</span>
+                </div>
+                <span class="badge bg-white text-dark rounded-pill px-3 py-1 fw-bold">{{ filtered_bookings|length }} แถว</span>
+            </div>
+            <div class="farm-table-wrapper">
+                <table class="farm-zebra-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">รหัสจอง</th>
+                            <th style="width: 22%;">ยานพาหนะเกษตร</th>
+                            <th style="width: 14%;">ผู้ขอใช้รถ</th>
+                            <th style="width: 16%;">ช่วงเวลาการใช้งาน</th>
+                            <th style="width: 18%;">สถานที่ / วัตถุประสงค์</th>
+                            <th style="width: 12%;">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in filtered_bookings %}
+                        <tr>
+                            <td class="fw-bold text-center">
+                                <span class="badge bg-dark">{{ b.id }}</span>
+                            </td>
+                            <td class="fw-bold text-dark">{{ b.vehicle }}</td>
+                            <td>{{ b.user }}</td>
+                            <td>
+                                <div>📅 {{ b.start_date }} ({{ b.start_time }})</div>
+                                <div class="text-muted small">🏁 {{ b.end_date }} ({{ b.end_time }})</div>
+                            </td>
+                            <td>
+                                <div><strong>📍</strong> {{ b.location }}</div>
+                                <div class="text-muted small">🎯 {{ b.purpose }}</div>
+                            </td>
+                            <td class="text-center">
+                                <span class="status-badge status-badge-{{ b.status }}">{{ b.status }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                🌾 ไม่พบข้อมูลการจองในช่วงเวลาและเงื่อนไขที่เลือก กรุณาปรับช่วงเวลาหรือตัวกรอง
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadExcel() {
+    const start = document.getElementById('filterStartDate').value;
+    const end = document.getElementById('filterEndDate').value;
+    const status = document.getElementById('filterStatus').value;
+    const vehicle = document.getElementById('filterVehicle').value;
+
+    const url = `{{ url_for('admin_export_download') }}?start_date=${encodeURIComponent(start)}&end_date=${encodeURIComponent(end)}&status=${encodeURIComponent(status)}&vehicle=${encodeURIComponent(vehicle)}`;
+    window.location.href = url;
+}
+</script>
+{% endblock %}

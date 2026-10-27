@@ -1,11 +1,24 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="row">
-    <div class="col-12">
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-11">
         <!-- Page Title Header -->
-        <div class="mb-3">
-            <h3 class="fw-bold" style="color: var(--farm-olive-deep); margin: 0; font-size: 1.6rem;">🌾 หน้าจอดำเนินการอนุมัติ (Agricarbook Admin)</h3>
-            <p class="text-muted mb-0" style="font-size: 0.95rem;">ตรวจสอบรายละเอียดและดำเนินการอนุมัติคำขอจองยานพาหนะเกษตร</p>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div>
+                <h3 class="fw-bold" style="color: var(--farm-olive-deep); margin: 0; font-size: 1.6rem;">🌾 หน้าจอดำเนินการอนุมัติ (Agricarbook Admin)</h3>
+                <p class="text-muted mb-0" style="font-size: 0.95rem;">ตรวจสอบรายละเอียดและดำเนินการอนุมัติคำขอจองยานพาหนะเกษตร</p>
+            </div>
+            <div class="mt-2 mt-md-0 d-flex flex-wrap gap-2">
+                <a href="{{ url_for('admin_vehicles_page') }}" class="btn btn-sm btn-outline-dark" style="border-radius: 8px; font-weight: 600;">
+                    🚜 จัดการรถ
+                </a>
+                <a href="{{ url_for('admin_overview_calendar') }}" class="btn btn-sm btn-outline-success" style="border-radius: 8px; font-weight: 600;">
+                    📊 ตารางการใช้รถ
+                </a>
+                <a href="{{ url_for('admin_export_page') }}" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 600;">
+                    📥 ส่งออก Excel
+                </a>
+            </div>
         </div>
         
         <!-- Pending Bookings Card -->
@@ -72,14 +85,15 @@
                                     <!-- Action Buttons -->
                                     <div class="admin-card-actions">
                                         <a href="{{ url_for('update_status', booking_id=b['id'], status='อนุมัติ') }}" 
-                                           class="farm-btn farm-btn-success flex-fill text-center">
+                                           class="farm-btn farm-btn-success flex-fill text-center"
+                                           onclick="return confirm('ยืนยันอนุมัติคำขอ {{ b['id'] }} ของคุณ {{ b['user'] }} หรือไม่? (ระบบจะส่งการแจ้งเตือนไปยังผู้จอง)');">
                                             ✔ อนุมัติ
                                         </a>
-                                        <a href="{{ url_for('update_status', booking_id=b['id'], status='ไม่อนุมัติ') }}" 
-                                           class="farm-btn farm-btn-danger flex-fill text-center" 
-                                           onclick="return confirm('ยืนยันไม่อนุมัติคำขอ {{ b['id'] }} หรือไม่?');">
+                                        <button type="button" 
+                                                class="farm-btn farm-btn-danger flex-fill text-center border-0" 
+                                                onclick="rejectBooking('{{ b['id'] }}', '{{ b['user'] }}')">
                                             ✖ ไม่อนุมัติ
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -95,51 +109,320 @@
         </div>
 
         <!-- All Bookings History -->
-        <div class="farm-table-card-yellow">
-            <div class="farm-card-header-clipboard d-flex justify-content-between align-items-center">
+        <div class="farm-table-card-yellow shadow-sm">
+            <!-- Header bar with Title & Total count badge -->
+            <div class="farm-card-header-clipboard d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="d-flex align-items-center gap-2">
-                    <span>📜</span>
-                    <span>ประวัติรายการจองทั้งหมด</span>
+                    <span style="font-size: 1.25rem;">📜</span>
+                    <span class="fs-5 fw-bold">ประวัติรายการจองทั้งหมด</span>
                 </div>
-                <span class="badge bg-white text-dark rounded-pill px-3 py-1" style="font-weight: 600;">{{ all_bookings|length }} รายการ</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-white text-dark rounded-pill px-3 py-1 shadow-sm" style="font-weight: 700; font-size: 0.85rem;" id="historyCountBadge">
+                        {{ all_bookings|length }} รายการ
+                    </span>
+                </div>
             </div>
-            <div class="farm-table-wrapper">
-                <table class="farm-zebra-table text-center">
+
+            <!-- Toolbar: Real-time Search + Status Filter Chips + View Mode Switch -->
+            <div class="admin-history-filter-bar">
+                <!-- Search Box -->
+                <div class="admin-history-search">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="adminHistorySearch" placeholder="ค้นหา รหัส, รถ, ผู้ขอ, แปลง, วัตถุประสงค์..." autocomplete="off">
+                </div>
+
+                <!-- Status Filter Chips -->
+                <div class="d-flex flex-wrap gap-1 align-items-center">
+                    <button type="button" class="admin-filter-chip active" data-status="ALL">ทั้งหมด</button>
+                    <button type="button" class="admin-filter-chip" data-status="รออนุมัติ">รออนุมัติ</button>
+                    <button type="button" class="admin-filter-chip" data-status="อนุมัติ">อนุมัติ</button>
+                    <button type="button" class="admin-filter-chip" data-status="ไม่อนุมัติ">ไม่อนุมัติ</button>
+                    <button type="button" class="admin-filter-chip" data-status="ยกเลิกแล้ว">ยกเลิกแล้ว</button>
+                </div>
+
+                <!-- View Mode Switch: Table vs Card (Ideal for mobile & tablet) -->
+                <div class="btn-group btn-group-sm ms-auto shadow-sm" role="group" aria-label="View toggle">
+                    <button type="button" class="btn btn-outline-dark active" id="btnViewTable" title="แสดงผลแบบตาราง (Table View)">
+                        📋 ตาราง
+                    </button>
+                    <button type="button" class="btn btn-outline-dark" id="btnViewCards" title="แสดงผลแบบการ์ด (Card View)">
+                        📱 การ์ด
+                    </button>
+                </div>
+            </div>
+
+            <!-- 1. Desktop & Tablet Table View (Guaranteed No Squishing / Horizontal Scroll) -->
+            <div class="farm-table-wrapper" id="adminTableView">
+                <table class="farm-zebra-table text-center" id="adminBookingsTable">
                     <thead>
                         <tr>
-                            <th>รหัส</th>
-                            <th>ยานพาหนะ</th>
-                            <th>ผู้ขอใช้รถ</th>
-                            <th>เริ่มต้นใช้งาน</th>
-                            <th>สิ้นสุดการใช้งาน</th>
-                            <th>สถานที่ปฏิบัติงาน</th>
-                            <th>วัตถุประสงค์</th>
-                            <th>สถานะ</th>
+                            <th style="width: 90px; white-space: nowrap;">รหัส</th>
+                            <th style="min-width: 180px; text-align: left; white-space: nowrap;">ยานพาหนะเกษตร</th>
+                            <th style="min-width: 140px; text-align: left; white-space: nowrap;">ผู้ขอใช้รถ</th>
+                            <th style="min-width: 140px; white-space: nowrap;">เริ่มต้นใช้งาน</th>
+                            <th style="min-width: 140px; white-space: nowrap;">สิ้นสุดการใช้งาน</th>
+                            <th style="min-width: 150px; text-align: left; white-space: nowrap;">สถานที่ปฏิบัติงาน</th>
+                            <th style="min-width: 120px; text-align: left; white-space: nowrap;">วัตถุประสงค์</th>
+                            <th style="width: 110px; white-space: nowrap;">สถานะ</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="adminTableBody">
                         {% for b in all_bookings %}
-                        <tr>
-                            <td class="fw-bold">{{ b['id'] }}</td>
-                            <td class="fw-bold text-dark">{{ b['vehicle'] }}</td>
-                            <td>{{ b['user'] }}</td>
-                            <td>{{ b['start_date'] }} <small class="text-muted">({{ b['start_time'] }})</small></td>
-                            <td>{{ b['end_date'] }} <small class="text-muted">({{ b['end_time'] }})</small></td>
-                            <td>{{ b['location'] }}</td>
-                            <td>{{ b['purpose'] }}</td>
-                            <td>
+                        <tr class="admin-history-row" 
+                            data-id="{{ b['id']|lower }}"
+                            data-vehicle="{{ b['vehicle']|lower }}"
+                            data-user="{{ b['user']|lower }}"
+                            data-location="{{ b['location']|lower }}"
+                            data-purpose="{{ b['purpose']|lower }}"
+                            data-status="{{ b['status'] }}">
+                            <td class="text-center" style="white-space: nowrap;">
+                                <span class="badge bg-dark font-monospace px-2 py-1 shadow-sm" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+                                    {{ b['id'] }}
+                                </span>
+                            </td>
+                            <td class="text-start">
+                                <div class="fw-bold text-dark" style="font-size: 0.92rem; word-break: break-word;">
+                                    🚜 {{ b['vehicle'] }}
+                                </div>
+                            </td>
+                            <td class="text-start" style="white-space: nowrap;">
+                                <div class="fw-semibold text-dark">
+                                    👤 {{ b['user'] }}
+                                </div>
+                            </td>
+                            <td style="white-space: nowrap;">
+                                <div class="fw-bold text-dark" style="font-size: 0.88rem;">📅 {{ b['start_date'] }}</div>
+                                <small class="text-muted" style="font-size: 0.78rem;">⏰ {{ b['start_time'] }} น.</small>
+                            </td>
+                            <td style="white-space: nowrap;">
+                                <div class="fw-bold text-dark" style="font-size: 0.88rem;">🏁 {{ b['end_date'] }}</div>
+                                <small class="text-muted" style="font-size: 0.78rem;">⏰ {{ b['end_time'] }} น.</small>
+                            </td>
+                            <td class="text-start">
+                                <div style="font-size: 0.88rem; word-break: break-word;">📍 {{ b['location'] }}</div>
+                            </td>
+                            <td class="text-start">
+                                <div style="font-size: 0.88rem; word-break: break-word;">🎯 {{ b['purpose'] }}</div>
+                                {% if b['note'] and b['note'] != '-' %}
+                                <small class="text-muted d-block text-truncate" title="{{ b['note'] }}" style="max-width: 180px; font-size: 0.76rem;">💬 {{ b['note'] }}</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-center" style="white-space: nowrap;">
                                 <span class="status-badge status-badge-{{ b['status'] }}">{{ b['status'] }}</span>
                             </td>
                         </tr>
                         {% else %}
-                        <tr>
-                            <td colspan="8" class="text-muted py-4">ยังไม่มีประวัติการจอง</td>
+                        <tr id="emptyTableRow">
+                            <td colspan="8" class="text-muted py-5 text-center">🌾 ยังไม่มีประวัติการจองในระบบ</td>
                         </tr>
                         {% endfor %}
+                        <tr id="noMatchTableRow" style="display: none;">
+                            <td colspan="8" class="text-muted py-5 text-center">🔍 ไม่พบรายการจองที่ตรงกับเงื่อนไขการค้นหา</td>
+                        </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- 2. Mobile & Responsive Card View (Ideal on iPhone/Android/Tablets) -->
+            <div id="adminCardView" class="p-3" style="display: none; background: #fafafa;">
+                <div class="row g-2" id="adminCardsContainer">
+                    {% for b in all_bookings %}
+                    <div class="col-12 col-md-6 admin-card-item-col"
+                         data-id="{{ b['id']|lower }}"
+                         data-vehicle="{{ b['vehicle']|lower }}"
+                         data-user="{{ b['user']|lower }}"
+                         data-location="{{ b['location']|lower }}"
+                         data-purpose="{{ b['purpose']|lower }}"
+                         data-status="{{ b['status'] }}">
+                        <div class="admin-history-mobile-card">
+                            <!-- Top row: Order ID + Status Badge -->
+                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
+                                <span class="badge bg-dark font-monospace px-2 py-1 shadow-sm" style="font-size: 0.82rem; letter-spacing: 0.5px;">
+                                    {{ b['id'] }}
+                                </span>
+                                <span class="status-badge status-badge-{{ b['status'] }}">{{ b['status'] }}</span>
+                            </div>
+
+                            <!-- Vehicle Name -->
+                            <h6 class="fw-bold mb-2 text-dark" style="color: var(--farm-olive-deep) !important;">
+                                🚜 {{ b['vehicle'] }}
+                            </h6>
+
+                            <!-- Details box -->
+                            <div class="p-2 rounded mb-2" style="background: #fbfcf9; border: 1px solid #edf1e4; font-size: 0.86rem; line-height: 1.45;">
+                                <div class="mb-1"><strong>👤 ผู้ขอใช้รถ:</strong> {{ b['user'] }}</div>
+                                <div class="mb-1"><strong>📍 สถานที่:</strong> {{ b['location'] }}</div>
+                                <div class="mb-1"><strong>🎯 วัตถุประสงค์:</strong> {{ b['purpose'] }}</div>
+                                {% if b['note'] and b['note'] != '-' %}
+                                <div class="text-muted small"><strong>💬 หมายเหตุ:</strong> {{ b['note'] }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Date & Time Range -->
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top text-muted small flex-wrap gap-1" style="font-size: 0.8rem;">
+                                <span>📅 {{ b['start_date'] }} ({{ b['start_time'] }})</span>
+                                <span>➔</span>
+                                <span>🏁 {{ b['end_date'] }} ({{ b['end_time'] }})</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div id="noMatchCardNotice" class="text-center py-5 text-muted" style="display: none;">
+                    🔍 ไม่พบรายการจองที่ตรงกับเงื่อนไขการค้นหา
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function rejectBooking(bookingId, userName) {
+    const reason = prompt(`ระบุเหตุผลการไม่อนุมัติคำขอ ${bookingId} (ผู้ขอ: ${userName}):`, 'ยานพาหนะไม่พร้อมใช้งานในวันดังกล่าว');
+    if (reason !== null) {
+        const cleanReason = reason.trim() || 'ยานพาหนะไม่พร้อมใช้งานในวันดังกล่าว';
+        window.location.href = `/approve/update_status/${bookingId}/ไม่อนุมัติ?reason=${encodeURIComponent(cleanReason)}`;
+    }
+}
+
+// ==============================================================
+// Admin History Table & Card Responsive Controller
+// ==============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('adminHistorySearch');
+    const filterChips = document.querySelectorAll('.admin-filter-chip');
+    const countBadge = document.getElementById('historyCountBadge');
+    
+    const tableView = document.getElementById('adminTableView');
+    const cardView = document.getElementById('adminCardView');
+    const btnViewTable = document.getElementById('btnViewTable');
+    const btnViewCards = document.getElementById('btnViewCards');
+
+    const tableRows = document.querySelectorAll('.admin-history-row');
+    const cardCols = document.querySelectorAll('.admin-card-item-col');
+    const noMatchTableRow = document.getElementById('noMatchTableRow');
+    const noMatchCardNotice = document.getElementById('noMatchCardNotice');
+
+    let currentStatus = 'ALL';
+    let searchQuery = '';
+
+    // Automatic Responsive Default: On screens <= 768px (Phone/Small Tablet), default to Card View
+    if (window.innerWidth <= 768) {
+        setMode('cards');
+    } else {
+        setMode('table');
+    }
+
+    function setMode(mode) {
+        if (mode === 'cards') {
+            if (tableView) tableView.style.display = 'none';
+            if (cardView) cardView.style.display = 'block';
+            if (btnViewCards) {
+                btnViewCards.classList.add('active', 'btn-dark');
+                btnViewCards.classList.remove('btn-outline-dark');
+            }
+            if (btnViewTable) {
+                btnViewTable.classList.remove('active', 'btn-dark');
+                btnViewTable.classList.add('btn-outline-dark');
+            }
+        } else {
+            if (cardView) cardView.style.display = 'none';
+            if (tableView) tableView.style.display = 'block';
+            if (btnViewTable) {
+                btnViewTable.classList.add('active', 'btn-dark');
+                btnViewTable.classList.remove('btn-outline-dark');
+            }
+            if (btnViewCards) {
+                btnViewCards.classList.remove('active', 'btn-dark');
+                btnViewCards.classList.add('btn-outline-dark');
+            }
+        }
+    }
+
+    if (btnViewTable) {
+        btnViewTable.addEventListener('click', function() { setMode('table'); });
+    }
+    if (btnViewCards) {
+        btnViewCards.addEventListener('click', function() { setMode('cards'); });
+    }
+
+    // Filter Logic
+    function applyHistoryFilter() {
+        let visibleCount = 0;
+
+        // 1. Filter Table Rows
+        tableRows.forEach(row => {
+            const rowStatus = row.getAttribute('data-status') || '';
+            const rowCorpus = [
+                row.getAttribute('data-id') || '',
+                row.getAttribute('data-vehicle') || '',
+                row.getAttribute('data-user') || '',
+                row.getAttribute('data-location') || '',
+                row.getAttribute('data-purpose') || ''
+            ].join(' ');
+
+            const matchesStatus = (currentStatus === 'ALL' || rowStatus === currentStatus);
+            const matchesSearch = (!searchQuery || rowCorpus.includes(searchQuery));
+
+            if (matchesStatus && matchesSearch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // 2. Filter Card Cols
+        cardCols.forEach(col => {
+            const colStatus = col.getAttribute('data-status') || '';
+            const colCorpus = [
+                col.getAttribute('data-id') || '',
+                col.getAttribute('data-vehicle') || '',
+                col.getAttribute('data-user') || '',
+                col.getAttribute('data-location') || '',
+                col.getAttribute('data-purpose') || ''
+            ].join(' ');
+
+            const matchesStatus = (currentStatus === 'ALL' || colStatus === currentStatus);
+            const matchesSearch = (!searchQuery || colCorpus.includes(searchQuery));
+
+            if (matchesStatus && matchesSearch) {
+                col.style.display = '';
+            } else {
+                col.style.display = 'none';
+            }
+        });
+
+        // Update count badge & no-match states
+        if (countBadge) {
+            countBadge.innerText = `${visibleCount} รายการ`;
+        }
+
+        if (noMatchTableRow) {
+            noMatchTableRow.style.display = (visibleCount === 0 && tableRows.length > 0) ? '' : 'none';
+        }
+        if (noMatchCardNotice) {
+            noMatchCardNotice.style.display = (visibleCount === 0 && cardCols.length > 0) ? 'block' : 'none';
+        }
+    }
+
+    // Search Input Listener
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            searchQuery = this.value.trim().toLowerCase();
+            applyHistoryFilter();
+        });
+    }
+
+    // Status Filter Chip Listeners
+    filterChips.forEach(chip => {
+        chip.addEventListener('click', function() {
+            filterChips.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            currentStatus = this.getAttribute('data-status') || 'ALL';
+            applyHistoryFilter();
+        });
+    });
+});
+</script>
 {% endblock %}

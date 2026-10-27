@@ -1,7 +1,178 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-8">
+    <div class="col-12 col-md-10 col-lg-9 col-xl-8">
+        {% if user_notifications %}
+        <!-- Recent Status Notifications Banner for Requester -->
+        <div class="card mb-4 border-0 shadow-sm" style="border-radius: 12px; background: #ffffff; border-left: 5px solid var(--farm-olive) !important;">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="font-size: 1.25rem;">🔔</span>
+                        <h5 class="fw-bold mb-0" style="color: var(--farm-olive-deep); font-size: 1.1rem;">การแจ้งเตือนผลการจองล่าสุดของคุณ</h5>
+                        {% if unread_count > 0 %}
+                        <span id="topNotifBadge" class="badge bg-danger rounded-pill">{{ unread_count }} รายการใหม่</span>
+                        {% endif %}
+                    </div>
+                    {% if unread_count > 0 %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="markAllNavNotifsRead()" style="font-size: 0.78rem; border-radius: 6px;">
+                        ✔ ทำเครื่องหมายว่าอ่านแล้วทั้งหมด
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex flex-column gap-2 mt-2">
+                    {% for n in user_notifications[:3] %}
+                    <div class="p-2 px-3 rounded d-flex flex-wrap justify-content-between align-items-center gap-2 {% if not n['is_read'] %}border-start border-4 {% if n['status'] == 'อนุมัติ' %}border-success{% else %}border-danger{% endif %}{% endif %}" 
+                         style="background-color: {% if n['status'] == 'อนุมัติ' %}#f2f8ed{% else %}#fdf2f4{% endif %}; font-size: 0.88rem;">
+                        <div class="d-flex align-items-start gap-2">
+                            <span style="font-size: 1.1rem;">{% if n['status'] == 'อนุมัติ' %}✅{% else %}❌{% endif %}</span>
+                            <div>
+                                <div>
+                                    <strong>คำขอจอง {{ n['booking_id'] }}</strong> ({{ n['vehicle'] }}) 
+                                    ได้รับการ <span class="fw-bold {% if n['status'] == 'อนุมัติ' %}text-success{% else %}text-danger{% endif %}">"{{ n['status'] }}"</span> แล้ว
+                                </div>
+                                {% if n['reason'] and n['reason'] != '-' %}
+                                <div class="text-muted small mt-1">💬 หมายเหตุ/เหตุผล: {{ n['reason'] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 ms-auto ms-sm-0">
+                            <small class="text-muted" style="font-size: 0.76rem;">⏱️ {{ n['created_at'] }}</small>
+                            {% if not n['is_read'] %}
+                            <span class="badge bg-warning text-dark" style="font-size: 0.68rem;">ใหม่</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- My Bookings Card (แสดงรายการที่ผู้ใช้งานจองไว้ พร้อมสถานะการอนุมัติ และโควตาคงเหลือ) -->
+        <div class="card mb-4 border-0 shadow-sm" style="border-radius: 14px; background: #ffffff; border: 2px solid var(--farm-olive-border-soft) !important; overflow: hidden;">
+            <div class="p-3 p-md-4" style="background-color: var(--farm-olive-tint); border-bottom: 2px solid var(--farm-olive-border-soft);">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="font-size: 1.4rem;">🚜</span>
+                        <div>
+                            <h5 class="fw-bold mb-0" style="color: var(--farm-olive-deep);">รายการยานพาหนะที่คุณจองไว้</h5>
+                            <small class="text-muted">ตรวจสอบสถานะการอนุมัติและประวัติการขอใช้รถของคุณ</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        {% if active_count >= 2 %}
+                        <span class="badge bg-danger text-white px-3 py-2" style="font-size: 0.85rem; border-radius: 20px;">
+                            ⚠️ ใช้โควตาเต็มแล้ว: {{ active_count }} / 2 คัน
+                        </span>
+                        {% else %}
+                        <span class="badge px-3 py-2" style="font-size: 0.85rem; border-radius: 20px; background-color: var(--farm-olive); color: #ffffff;">
+                            โควตาการจองขณะนี้: <strong>{{ active_count }}</strong> / 2 คัน
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-3 p-md-4">
+                {% if active_count >= 2 %}
+                <div class="alert alert-warning border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 10px; background-color: #fff9db; color: #856404;">
+                    <span style="font-size: 1.25rem;">⚠️</span>
+                    <div>
+                        <strong>บัญชีของคุณใช้สิทธิ์จองครบ 2 คันแล้ว:</strong>
+                        ระบบจำกัดให้แต่ละบัญชีจองรถได้ไม่เกิน 2 คันพร้อมกัน (นับรวมรายการที่รออนุมัติและอนุมัติที่ยังไม่หมดอายุ) หากต้องการจองคันใหม่ กรุณารอให้รายการเดิมเสร็จสิ้นหรือแจ้งยกเลิก
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if my_bookings %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 0.92rem;">
+                        <thead style="background-color: #f8f9fa;">
+                            <tr>
+                                <th style="width: 10%;">รหัสจอง</th>
+                                <th style="width: 22%;">ยานพาหนะ</th>
+                                <th style="width: 26%;">วันและเวลาใช้งาน</th>
+                                <th style="width: 15%;">สถานที่ / วัตถุประสงค์</th>
+                                <th style="width: 13%; text-align: center;">สถานะ</th>
+                                <th style="width: 14%; text-align: center;">การดำเนินการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mb in my_bookings %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-dark border fw-bold" style="font-family: monospace; font-size: 0.85rem;">{{ mb.id }}</span>
+                                </td>
+                                <td>
+                                    <strong style="color: var(--farm-olive-deep);">{{ mb.vehicle }}</strong>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">📅 {{ mb.start_date }}{% if mb.start_date != mb.end_date %} ถึง {{ mb.end_date }}{% endif %}</div>
+                                    <small class="text-muted">⏱️ {{ mb.start_time }} - {{ mb.end_time }} น.</small>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 140px;" title="{{ mb.location }}">📍 {{ mb.location }}</div>
+                                    <small class="text-muted text-truncate d-block" style="max-width: 140px;" title="{{ mb.purpose }}">🎯 {{ mb.purpose }}</small>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="status-badge status-badge-{{ mb.status }}" style="font-size: 0.8rem; padding: 4px 12px;">
+                                        {% if mb.status == 'อนุมัติ' %}✅ อนุมัติแล้ว
+                                        {% elif mb.status == 'รออนุมัติ' %}⏳ รออนุมัติ
+                                        {% elif mb.status == 'ไม่อนุมัติ' %}❌ ไม่อนุมัติ
+                                        {% elif mb.status == 'ยกเลิกแล้ว' %}🚫 ยกเลิกแล้ว
+                                        {% else %}{{ mb.status }}{% endif %}
+                                    </span>
+                                </td>
+                                <td style="text-align: center;">
+                                    {% if mb.can_edit or mb.can_cancel %}
+                                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                        {% if mb.can_edit %}
+                                        <button type="button" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1"
+                                                onclick="openEditBookingModal({{ mb|tojson|forceescape }})"
+                                                style="font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;"
+                                                title="แก้ไขข้อมูลหรือช่วงเวลา (ใช้สิทธิ์ไปแล้ว {{ mb.edit_count }}/{{ max_edits_per_booking|default(2) }} ครั้ง)">
+                                            ✏️ แก้ไข
+                                        </button>
+                                        {% elif mb.edit_count >= max_edits_per_booking|default(2) %}
+                                        <span class="badge bg-light text-muted border" style="font-size: 0.72rem;" title="แก้ไขครบ 2 ครั้งแล้ว">
+                                            ✏️ ครบ 2 ครั้งแล้ว
+                                        </span>
+                                        {% endif %}
+
+                                        {% if mb.can_cancel %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
+                                                onclick="openCancelBookingModal('{{ mb.id }}', '{{ mb.vehicle }}', '{{ mb.start_date }}', '{{ mb.start_time }}')"
+                                                style="font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;"
+                                                title="ขอยกเลิกคำขอจองนี้">
+                                            ❌ ยกเลิก
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% elif mb.status == 'ยกเลิกแล้ว' %}
+                                    <span class="text-muted" style="font-size: 0.78rem;">🚫 ยกเลิกแล้ว</span>
+                                    {% elif mb.status == 'ไม่อนุมัติ' %}
+                                    <span class="text-muted" style="font-size: 0.78rem;">❌ ไม่อนุมัติ</span>
+                                    {% elif mb.is_past %}
+                                    <span class="text-muted" style="font-size: 0.78rem;">⏱️ สิ้นสุดแล้ว</span>
+                                    {% else %}
+                                    <span class="text-muted" style="font-size: 0.78rem;">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted" style="font-size: 0.95rem;">
+                    🌾 คุณยังไม่มีรายการจองยานพาหนะในขณะนี้ สามารถกรอกแบบฟอร์มด้านล่างเพื่อขอจองได้เลย (สิทธิ์จองได้สูงสุด 2 คัน)
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- Main Booking Card Matching Farm Theme -->
         <div class="farm-booking-card">
             <!-- Header bar -->
@@ -12,10 +183,22 @@
             <!-- Form body -->
             <div class="farm-card-body">
                 <form action="{{ url_for('user_request') }}" method="POST">
-                    <!-- ชื่อผู้ขอใช้รถ -->
+                    <!-- ชื่อและนามสกุล ผู้ขอใช้รถ -->
                     <div class="farm-form-group">
-                        <label class="farm-label">ชื่อ-นามสกุล ผู้ขอใช้รถ <span class="required-asterisk">*</span></label>
-                        <input type="text" class="farm-input" name="user_name" placeholder="เช่น นายสมชาย ใจดี" required>
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6">
+                                <label class="farm-label">ชื่อจริง ผู้ขอใช้รถ (รวมคำนำหน้าถ้ามี) <span class="required-asterisk">*</span></label>
+                                <input type="text" class="farm-input" name="first_name" id="userFirstNameInput" value="{{ default_first_name|default('') }}" placeholder="เช่น นายสมชาย หรือ สมชาย" required autocomplete="given-name">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="farm-label">นามสกุล <span class="required-asterisk">*</span></label>
+                                <input type="text" class="farm-input" name="last_name" id="userLastNameInput" value="{{ default_last_name|default('') }}" placeholder="เช่น ใจดี" required autocomplete="family-name">
+                            </div>
+                        </div>
+                        <input type="hidden" name="user_name" id="userNameInput" value="{{ session.get('user_name', '') }}">
+                        {% if session.get('user_name') %}
+                        <small class="text-success fw-bold mt-1 d-block" style="font-size: 0.8rem;">✔ ดึงชื่อและนามสกุลจากบัญชีเข้าสู่ระบบอัตโนมัติ ({{ session.get('username') }})</small>
+                        {% endif %}
                     </div>
 
                     <!-- วันที่เริ่มต้นใช้งาน และ เวลาเริ่มต้นใช้งาน -->
@@ -23,11 +206,18 @@
                         <div class="farm-datetime-grid">
                             <div>
                                 <label class="farm-label">วันที่เริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
-                                <input type="date" class="farm-input" name="start_date" required>
+                                <input type="date" class="farm-input" name="start_date" id="startDateInput" min="{{ today }}" required>
+                                <small class="text-muted" style="font-size: 0.78rem;">* ต้องเป็นวันนี้หรือในอนาคต</small>
                             </div>
                             <div>
                                 <label class="farm-label">เวลาเริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
-                                <input type="time" class="farm-input" name="start_time" required>
+                                <select class="farm-select" name="start_time" id="startTimeInput" required>
+                                    <option value="" disabled selected>-- เลือกเวลาเริ่มต้น (06:00 - 22:00) --</option>
+                                    {% for t in allowed_times %}
+                                    <option value="{{ t }}">{{ t }} น.</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted" style="font-size: 0.78rem;">* ช่วง 06:00 - 22:00 น. (ทุก 30 นาที)</small>
                             </div>
                         </div>
                     </div>
@@ -37,11 +227,18 @@
                         <div class="farm-datetime-grid">
                             <div>
                                 <label class="farm-label">วันที่สิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
-                                <input type="date" class="farm-input" name="end_date" required>
+                                <input type="date" class="farm-input" name="end_date" id="endDateInput" min="{{ today }}" required>
+                                <small class="text-muted" style="font-size: 0.78rem;">* ห้ามจองย้อนหลัง และจองได้ไม่เกิน 1 อาทิตย์ (สูงสุด 7 วัน)</small>
                             </div>
                             <div>
                                 <label class="farm-label">เวลาสิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
-                                <input type="time" class="farm-input" name="end_time" required>
+                                <select class="farm-select" name="end_time" id="endTimeInput" required>
+                                    <option value="" disabled selected>-- เลือกเวลาสิ้นสุด (06:00 - 22:00) --</option>
+                                    {% for t in allowed_times %}
+                                    <option value="{{ t }}">{{ t }} น.</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted" style="font-size: 0.78rem;">* ช่วง 06:00 - 22:00 น. (ทุก 30 นาที)</small>
                             </div>
                         </div>
                     </div>
@@ -76,13 +273,24 @@
                     </div>
 
                     <!-- ปุ่มส่งคำขอจอง -->
-                    <button type="submit" class="farm-btn-submit">🌾 ส่งคำขอจองยานพาหนะ</button>
+                    {% if active_count >= 2 %}
+                    <div class="text-center mb-2">
+                        <small class="text-danger fw-bold">⚠️ บัญชีของคุณจองครบ 2 คันแล้ว จึงไม่สามารถส่งคำขอเพิ่มได้ในขณะนี้</small>
+                    </div>
+                    {% endif %}
+                    <button type="submit" class="farm-btn-submit" {% if active_count >= 2 %}disabled style="opacity: 0.55; cursor: not-allowed; background-color: #8c9272;" title="คุณจองครบโควตา 2 คันแล้ว"{% endif %}>
+                        {% if active_count >= 2 %}
+                        ⚠️ โควตาการจองครบ 2 คันแล้ว
+                        {% else %}
+                        🌾 ส่งคำขอจองยานพาหนะ
+                        {% endif %}
+                    </button>
                 </form>
             </div>
         </div>
 
         <!-- Real-time Availability Table -->
-        <div class="farm-table-card-yellow">
+        <div class="farm-table-card-yellow" style="max-width: 760px;">
             <div class="farm-card-header-clipboard d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2">
                     <span>📋</span>
@@ -122,15 +330,245 @@
     </div>
 </div>
 
-<!-- JavaScript จัดการซ่อนดอกจันสีแดงเมื่อพิมพ์เสร็จ -->
+<!-- Modal 1: แก้ไขคำขอจองยานพาหนะ (Edit Booking Modal with Anti-Abuse) -->
+<div class="modal fade" id="editBookingModal" tabindex="-1" aria-labelledby="editBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header text-white" style="background-color: var(--farm-olive-header);">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 1.3rem;">✏️</span>
+                    <h5 class="modal-title fw-bold mb-0" id="editBookingModalLabel">แก้ไขข้อมูลคำขอจองยานพาหนะ</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editBookingForm" method="POST" action="">
+                <div class="modal-body p-3 p-md-4">
+                    <!-- คำเตือน Anti-Abuse -->
+                    <div class="alert border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 10px; background-color: #f1f6ea; color: var(--farm-olive-deep);">
+                        <span style="font-size: 1.25rem;">🛡️</span>
+                        <div style="font-size: 0.88rem;">
+                            <strong>ระบบป้องกันการแก้ไขเล่น:</strong> แต่ละคำขอจองสามารถแก้ไขได้สูงสุด <strong>{{ max_edits_per_booking|default(2) }} ครั้ง</strong> 
+                            และหากคำขอได้รับการอนุมัติแล้ว การแก้ไขจะเปลี่ยนสถานะกลับเป็น <strong>"รออนุมัติ"</strong> เพื่อให้เจ้าหน้าที่ตรวจสอบอีกครั้ง
+                        </div>
+                    </div>
+
+                    <div class="mb-3 d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary p-2" id="editBookingIdBadge" style="font-size: 0.85rem; font-family: monospace;">รหัสจอง: BK...</span>
+                        <span class="badge bg-light text-dark border p-2" id="editCountBadge" style="font-size: 0.82rem;">สิทธิ์แก้ไข</span>
+                    </div>
+
+                    <!-- ยานพาหนะ -->
+                    <div class="farm-form-group mb-3">
+                        <label class="farm-label">ยานพาหนะเกษตรที่ต้องการขอใช้ <span class="required-asterisk">*</span></label>
+                        <select class="farm-select" name="vehicle" id="editVehicleSelect" required>
+                            {% for v in vehicles %}
+                                <option value="{{ v }}">{{ v }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- วันที่ & เวลาเริ่มต้น -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="farm-label">วันที่เริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
+                            <input type="date" class="farm-input" name="start_date" id="editStartDateInput" min="{{ today }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="farm-label">เวลาเริ่มต้นใช้งาน <span class="required-asterisk">*</span></label>
+                            <select class="farm-select" name="start_time" id="editStartTimeSelect" required>
+                                {% for t in allowed_times %}
+                                <option value="{{ t }}">{{ t }} น.</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- วันที่ & เวลาสิ้นสุด -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="farm-label">วันที่สิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
+                            <input type="date" class="farm-input" name="end_date" id="editEndDateInput" min="{{ today }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="farm-label">เวลาสิ้นสุดการใช้งาน <span class="required-asterisk">*</span></label>
+                            <select class="farm-select" name="end_time" id="editEndTimeSelect" required>
+                                {% for t in allowed_times %}
+                                <option value="{{ t }}">{{ t }} น.</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- สถานที่ & วัตถุประสงค์ -->
+                    <div class="farm-form-group mb-3">
+                        <label class="farm-label">สถานที่ปฏิบัติงาน / แปลงเกษตร <span class="required-asterisk">*</span></label>
+                        <input type="text" class="farm-input" name="location" id="editLocationInput" required>
+                    </div>
+
+                    <div class="farm-form-group mb-3">
+                        <label class="farm-label">วัตถุประสงค์การใช้งาน <span class="required-asterisk">*</span></label>
+                        <input type="text" class="farm-input" name="purpose" id="editPurposeInput" required>
+                    </div>
+
+                    <div class="farm-form-group mb-3">
+                        <label class="farm-label">หมายเหตุเพิ่มเติม</label>
+                        <input type="text" class="farm-input" name="note" id="editNoteInput" placeholder="ระบุเพิ่มเติมหากมี">
+                    </div>
+
+                    <!-- เหตุผลในการขอแก้ไข (Mandatory Anti-Abuse) -->
+                    <div class="p-3 rounded" style="background-color: #fdf5f6; border: 1.5px dashed var(--farm-rose-border);">
+                        <label class="farm-label fw-bold mb-1" style="color: #8c2a3e;">
+                            เหตุผลในการขอแก้ไขข้อมูล (จำเป็นต้องระบุอย่างน้อย 5 ตัวอักษร) <span class="required-asterisk">*</span>
+                        </label>
+                        <textarea class="form-control" name="edit_reason" id="editReasonInput" rows="2" 
+                                  placeholder="เช่น ขอเปลี่ยนเป็นรถแทรกเตอร์รุ่นใหญ่ขึ้นเพื่อรองรับงานไถดะ, เลื่อนเวลาตามทีมงานเก็บเกี่ยว" 
+                                  minlength="5" required style="border-radius: 8px; font-size: 0.9rem;"></textarea>
+                        <small class="text-muted d-block mt-1">* ต้องระบุเหตุผลที่แท้จริง เพื่อให้เจ้าหน้าที่ใช้ประกอบการพิจารณาอนุมัติใหม่</small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal" style="border-radius: 8px;">ยกเลิก / ปิด</button>
+                    <button type="submit" class="farm-btn-submit m-0" style="width: auto; min-width: 170px; min-height: 42px; padding: 8px 24px;">
+                        💾 บันทึกการแก้ไข
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: ขอยกเลิกคำขอจองยานพาหนะ (Cancel Booking Modal with Anti-Abuse) -->
+<div class="modal fade" id="cancelBookingModal" tabindex="-1" aria-labelledby="cancelBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header bg-danger text-white">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 1.3rem;">⚠️</span>
+                    <h5 class="modal-title fw-bold mb-0" id="cancelBookingModalLabel">ยืนยันการยกเลิกคำขอจองยานพาหนะ</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="cancelBookingForm" method="POST" action="">
+                <div class="modal-body p-3 p-md-4">
+                    <!-- คำเตือน Anti-Abuse -->
+                    <div class="alert border-0 d-flex align-items-start gap-2 mb-3" style="border-radius: 10px; background-color: #fff8e6; color: #856404; font-size: 0.88rem;">
+                        <span style="font-size: 1.25rem;">🛡️</span>
+                        <div>
+                            <strong>ระบบป้องกันการกดยกเลิกรถเล่น:</strong>
+                            เมื่อกดยกเลิกแล้ว รายการจองจะถูกยกเลิกทันทีและไม่สามารถกู้คืนได้ และจำกัดการยกเลิกได้สูงสุด <strong>{{ max_daily_cancels|default(3) }} ครั้งต่อวัน</strong> 
+                            (วันนี้คุณยกเลิกไปแล้ว {{ daily_cancels|default(0) }}/{{ max_daily_cancels|default(3) }} ครั้ง)
+                        </div>
+                    </div>
+
+                    <div class="p-3 mb-3 rounded" style="background-color: #f8f9fa; border: 1px solid #dee2e6;">
+                        <div class="mb-1"><strong>รหัสคำสั่งจอง:</strong> <span id="cancelBookingIdText" class="badge bg-dark" style="font-family: monospace;">-</span></div>
+                        <div class="mb-1"><strong>ยานพาหนะ:</strong> <span id="cancelVehicleText" class="fw-bold text-success">-</span></div>
+                        <div><strong>ช่วงเวลาที่จอง:</strong> <span id="cancelTimeText" class="text-muted">-</span></div>
+                    </div>
+
+                    <!-- เหตุผลในการยกเลิก (Mandatory Anti-Abuse) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="font-size: 0.92rem;">
+                            เหตุผลในการขอยกเลิก (จำเป็นต้องระบุอย่างน้อย 5 ตัวอักษร) <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" name="cancel_reason" id="cancelReasonInput" rows="3" 
+                                  placeholder="เช่น ติดภารกิจด่วน, สภาพอากาศไม่เอื้ออำนวย ฝนตกแปลงนาแฉะ, ขอเปลี่ยนวันไปใช้สัปดาห์หน้า" 
+                                  minlength="5" required style="border-radius: 8px; font-size: 0.9rem;"></textarea>
+                        <small class="text-muted d-block mt-1">* กรุณาระบุเหตุผลที่แท้จริง</small>
+                    </div>
+
+                    <!-- Checkbox Confirmation ป้องกันกดพลาด -->
+                    <div class="form-check p-2 px-3 rounded" style="background-color: #fff1f3; border: 1px solid #f8d7da;">
+                        <input class="form-check-input ms-0 me-2" type="checkbox" id="confirmCancelCheck" required>
+                        <label class="form-check-label small fw-bold text-danger" for="confirmCancelCheck">
+                            ข้าพเจ้ายืนยันว่าต้องการยกเลิกคำขอจองนี้จริง และเข้าใจว่าสิทธิ์การจองคันนี้จะถูกสละทันที
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal" style="border-radius: 8px;">ไม่ยกเลิก / ปิด</button>
+                    <button type="submit" class="btn btn-danger px-4 fw-bold" id="confirmCancelBtn" style="border-radius: 8px;">
+                        ❌ ยืนยันการยกเลิกการจอง
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript จัดการซ่อนดอกจันสีแดงเมื่อพิมพ์เสร็จ และระบบตรวจสอบความถูกต้องของวันเวลา -->
 <script>
+// ฟังก์ชันเปิด Modal แก้ไขคำขอจอง
+function openEditBookingModal(booking) {
+    if (!booking) return;
+    const form = document.getElementById('editBookingForm');
+    form.action = `/booking/edit/${booking.id}`;
+    document.getElementById('editBookingIdBadge').textContent = `รหัสคำขอจอง: ${booking.id}`;
+    
+    const editCount = booking.edit_count || 0;
+    const maxEdits = {{ max_edits_per_booking|default(2) }};
+    document.getElementById('editCountBadge').textContent = `แก้ไขไปแล้ว ${editCount}/${maxEdits} ครั้ง`;
+
+    // เลือกยานพาหนะ
+    const vehicleSelect = document.getElementById('editVehicleSelect');
+    if (vehicleSelect && booking.vehicle) {
+        for (let i = 0; i < vehicleSelect.options.length; i++) {
+            if (vehicleSelect.options[i].value === booking.vehicle || vehicleSelect.options[i].value.includes(booking.vehicle)) {
+                vehicleSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+
+    document.getElementById('editStartDateInput').value = booking.start_date || '';
+    document.getElementById('editStartTimeSelect').value = booking.start_time || '';
+    document.getElementById('editEndDateInput').value = booking.end_date || '';
+    document.getElementById('editEndTimeSelect').value = booking.end_time || '';
+    document.getElementById('editLocationInput').value = booking.location || '';
+    document.getElementById('editPurposeInput').value = booking.purpose || '';
+    document.getElementById('editNoteInput').value = (booking.note && booking.note !== '-') ? booking.note : '';
+    document.getElementById('editReasonInput').value = '';
+
+    const todayStr = '{{ today }}';
+    const startDateInput = document.getElementById('editStartDateInput');
+    const endDateInput = document.getElementById('editEndDateInput');
+    startDateInput.min = todayStr;
+    endDateInput.min = booking.start_date || todayStr;
+
+    // คำนวณวันสิ้นสุดสูงสุดไม่เกิน 7 วัน
+    if (booking.start_date) {
+        const d = new Date(booking.start_date + 'T00:00:00');
+        d.setDate(d.getDate() + 7);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        endDateInput.max = `${yyyy}-${mm}-${dd}`;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('editBookingModal'));
+    modal.show();
+}
+
+// ฟังก์ชันเปิด Modal ยกเลิกคำขอจอง
+function openCancelBookingModal(bookingId, vehicle, startDate, startTime) {
+    const form = document.getElementById('cancelBookingForm');
+    form.action = `/booking/cancel/${bookingId}`;
+    document.getElementById('cancelBookingIdText').textContent = bookingId;
+    document.getElementById('cancelVehicleText').textContent = vehicle;
+    document.getElementById('cancelTimeText').textContent = `${startDate} (${startTime} น.)`;
+    document.getElementById('cancelReasonInput').value = '';
+    document.getElementById('confirmCancelCheck').checked = false;
+
+    const modal = new bootstrap.Modal(document.getElementById('cancelBookingModal'));
+    modal.show();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // 1. ซ่อนดอกจันสีแดงเมื่อพิมพ์ข้อมูลครบ
     const requiredElements = document.querySelectorAll('form [required]');
     
     requiredElements.forEach(elem => {
-        // ค้นหาดอกจันที่อยู่ภายในฟิลด์เดียวกันหรือ label ที่เกี่ยวข้อง
         let formGroup = elem.closest('.farm-form-group') || elem.parentElement;
-        // กรณีอยู่ใน farm-datetime-grid ให้ค้นหา label ใน parent ของ input นั้น
         let label = formGroup.querySelector('label');
         if (elem.parentElement && elem.parentElement.querySelector('label')) {
             label = elem.parentElement.querySelector('label');
@@ -152,6 +590,201 @@ document.addEventListener('DOMContentLoaded', function() {
         elem.addEventListener('change', checkValue);
         elem.addEventListener('blur', checkValue);
     });
+
+    // 2. ซิงโครไนซ์ชื่อจริงและนามสกุลผู้ขอใช้รถ
+    const userFnInput = document.getElementById('userFirstNameInput');
+    const userLnInput = document.getElementById('userLastNameInput');
+    const userNameHidden = document.getElementById('userNameInput');
+    function syncBookingUserName() {
+        if (userFnInput && userLnInput && userNameHidden) {
+            const fn = userFnInput.value.trim();
+            const ln = userLnInput.value.trim();
+            userNameHidden.value = (fn || ln) ? `${fn} ${ln}`.trim() : '';
+        }
+    }
+    if (userFnInput) userFnInput.addEventListener('input', syncBookingUserName);
+    if (userLnInput) userLnInput.addEventListener('input', syncBookingUserName);
+    syncBookingUserName();
+
+    // 3. ระบบควบคุมความรัดกุมของวันที่และเวลา (Strict Date/Time Validation: ห้ามย้อนหลัง และห้ามเกิน 1 อาทิตย์)
+    const startDateInput = document.getElementById('startDateInput');
+    const endDateInput = document.getElementById('endDateInput');
+    const startTimeInput = document.getElementById('startTimeInput');
+    const endTimeInput = document.getElementById('endTimeInput');
+    const bookingForm = document.querySelector('form[action="{{ url_for("user_request") }}"]');
+
+    if (startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', function() {
+            const startVal = this.value;
+            if (startVal) {
+                // วันสิ้นสุดต้องไม่ก่อนวันเริ่มต้น
+                endDateInput.min = startVal;
+                
+                // คำนวณวันสิ้นสุดสูงสุดไม่เกิน 7 วัน (1 อาทิตย์)
+                const d = new Date(startVal + 'T00:00:00');
+                d.setDate(d.getDate() + 7);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const maxDateStr = `${yyyy}-${mm}-${dd}`;
+                endDateInput.max = maxDateStr;
+
+                if (endDateInput.value && (endDateInput.value < startVal || endDateInput.value > maxDateStr)) {
+                    endDateInput.value = startVal;
+                }
+            }
+        });
+    }
+
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function(e) {
+            // ตรวจสอบชื่อจริงและนามสกุลผู้ขอใช้รถ
+            syncBookingUserName();
+            const fnVal = userFnInput ? userFnInput.value.trim() : '';
+            const lnVal = userLnInput ? userLnInput.value.trim() : '';
+            if (!fnVal || !lnVal) {
+                e.preventDefault();
+                alert('⚠️ กรุณาระบุทั้งชื่อจริงและนามสกุลผู้ขอใช้รถให้ครบถ้วน');
+                if (!fnVal && userFnInput) userFnInput.focus();
+                else if (userLnInput) userLnInput.focus();
+                return false;
+            }
+
+            const startDate = startDateInput ? startDateInput.value : '';
+            const endDate = endDateInput ? endDateInput.value : '';
+            const startTime = startTimeInput ? startTimeInput.value : '';
+            const endTime = endTimeInput ? endTimeInput.value : '';
+            const todayStr = '{{ today }}';
+            const activeQuota = {{ active_count|default(0) }};
+
+            // 0. ตรวจสอบโควตาการจองสูงสุด 2 คันต่อบัญชี
+            if (activeQuota >= 2) {
+                e.preventDefault();
+                alert('⚠️ ข้อผิดพลาด: บัญชีของคุณมีรายการจองที่รออนุมัติหรือได้รับการอนุมัติอยู่ครบ 2 คันแล้ว (ระบบจำกัดให้แต่ละบัญชีจองได้ไม่เกิน 2 คันพร้อมกัน)');
+                return false;
+            }
+
+            // 1. ตรวจสอบว่าวันที่เริ่มต้นต้องไม่เป็นอดีต
+            if (startDate && startDate < todayStr) {
+                e.preventDefault();
+                alert('⚠️ ข้อผิดพลาด: วันที่เริ่มต้นการใช้งานต้องเป็นวันนี้หรือวันข้างหน้า (ไม่สามารถเลือกวันย้อนหลังได้)');
+                startDateInput.focus();
+                return false;
+            }
+
+            // 2. ตรวจสอบว่าวันที่สิ้นสุดไม่น้อยกว่าวันที่เริ่มต้น (ห้ามจองย้อนหลัง เช่น 11 ธ.ค. ถึง 8 ธ.ค.)
+            if (startDate && endDate && endDate < startDate) {
+                e.preventDefault();
+                alert('⚠️ ข้อผิดพลาด: วันที่สิ้นสุดการใช้งานต้องไม่เกิดขึ้นก่อนวันที่เริ่มต้นใช้งาน! (ห้ามจองวันย้อนหลัง เช่น 11 ธ.ค. ถึง 8 ธ.ค.)');
+                endDateInput.focus();
+                return false;
+            }
+
+            // 3. ตรวจสอบว่าระยะเวลาการจองต้องไม่เกิน 1 สัปดาห์ (7 วัน)
+            if (startDate && endDate) {
+                const d1 = new Date(startDate + 'T00:00:00');
+                const d2 = new Date(endDate + 'T00:00:00');
+                const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+                if (diffDays > 7) {
+                    e.preventDefault();
+                    alert(`⚠️ ข้อผิดพลาด: ไม่สามารถจองรถเกิน 1 อาทิตย์ได้! (คุณเลือก ${diffDays} วัน, สูงสุดไม่เกิน 7 วัน)`);
+                    endDateInput.focus();
+                    return false;
+                }
+            }
+
+            // 4. หากเป็นวันเดียวกัน เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น
+            if (startDate && endDate && startDate === endDate) {
+                if (startTime && endTime && endTime <= startTime) {
+                    e.preventDefault();
+                    alert('⚠️ ข้อผิดพลาด: เวลาสิ้นสุดการใช้งานต้องมากกว่าเวลาเริ่มต้นใช้งานในวันเดียวกัน!');
+                    endTimeInput.focus();
+                    return false;
+                }
+            }
+        });
+    }
+
+    // 3. ตรวจสอบความถูกต้องของวันและเวลาในแบบฟอร์มแก้ไขคำขอจอง (Edit Booking Form)
+    const editStartDateInput = document.getElementById('editStartDateInput');
+    const editEndDateInput = document.getElementById('editEndDateInput');
+    const editStartTimeSelect = document.getElementById('editStartTimeSelect');
+    const editEndTimeSelect = document.getElementById('editEndTimeSelect');
+    const editReasonInput = document.getElementById('editReasonInput');
+    const editBookingForm = document.getElementById('editBookingForm');
+
+    if (editStartDateInput && editEndDateInput) {
+        editStartDateInput.addEventListener('change', function() {
+            const startVal = this.value;
+            if (startVal) {
+                editEndDateInput.min = startVal;
+                const d = new Date(startVal + 'T00:00:00');
+                d.setDate(d.getDate() + 7);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const maxDateStr = `${yyyy}-${mm}-${dd}`;
+                editEndDateInput.max = maxDateStr;
+
+                if (editEndDateInput.value && (editEndDateInput.value < startVal || editEndDateInput.value > maxDateStr)) {
+                    editEndDateInput.value = startVal;
+                }
+            }
+        });
+    }
+
+    if (editBookingForm) {
+        editBookingForm.addEventListener('submit', function(e) {
+            const startDate = editStartDateInput ? editStartDateInput.value : '';
+            const endDate = editEndDateInput ? editEndDateInput.value : '';
+            const startTime = editStartTimeSelect ? editStartTimeSelect.value : '';
+            const endTime = editEndTimeSelect ? editEndTimeSelect.value : '';
+            const reason = editReasonInput ? editReasonInput.value.trim() : '';
+            const todayStr = '{{ today }}';
+
+            if (startDate && startDate < todayStr) {
+                e.preventDefault();
+                alert('⚠️ ข้อผิดพลาด: วันที่เริ่มต้นการใช้งานต้องเป็นวันนี้หรือวันข้างหน้า');
+                editStartDateInput.focus();
+                return false;
+            }
+
+            if (startDate && endDate && endDate < startDate) {
+                e.preventDefault();
+                alert('⚠️ ข้อผิดพลาด: วันที่สิ้นสุดต้องไม่เกิดขึ้นก่อนวันที่เริ่มต้นใช้งาน');
+                editEndDateInput.focus();
+                return false;
+            }
+
+            if (startDate && endDate) {
+                const d1 = new Date(startDate + 'T00:00:00');
+                const d2 = new Date(endDate + 'T00:00:00');
+                const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+                if (diffDays > 7) {
+                    e.preventDefault();
+                    alert(`⚠️ ข้อผิดพลาด: ระยะเวลาการจองต้องไม่เกิน 1 สัปดาห์ (คุณเลือก ${diffDays} วัน)`);
+                    editEndDateInput.focus();
+                    return false;
+                }
+            }
+
+            if (startDate && endDate && startDate === endDate) {
+                if (startTime && endTime && endTime <= startTime) {
+                    e.preventDefault();
+                    alert('⚠️ ข้อผิดพลาด: เวลาสิ้นสุดการใช้งานต้องมากกว่าเวลาเริ่มต้นใช้งานในวันเดียวกัน!');
+                    editEndTimeSelect.focus();
+                    return false;
+                }
+            }
+
+            if (reason.length < 5) {
+                e.preventDefault();
+                alert('⚠️ ข้อผิดพลาด: กรุณาระบุเหตุผลในการขอแก้ไขข้อมูลอย่างน้อย 5 ตัวอักษร');
+                editReasonInput.focus();
+                return false;
+            }
+        });
+    }
 });
 </script>
 {% endblock %}
